@@ -1,0 +1,3 @@
+useDynLib(RandomForest2, .registration=TRUE)
+exportPattern("^[[:alpha:]]+")
+importFrom(Rcpp, evalCpp)
