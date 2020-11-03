@@ -5,11 +5,12 @@ Version: 0.1
 Date: 2020-10-13
 Author: Mikel N. Legasa
 Maintainer: Mikel N. Legasa <mikel.legasa@unican.es>
-Description: One paragraph description of what the package
-      does as one or more full sentences.
+Description: Random Forests built on top of rpart.
 License: GPL (>= 2)
-Imports: Rcpp (>= 1.0.5), 
+Imports: Rcpp (>= 1.0.5)
+Depends: rpart,
          future.apply,
-         progressr
-Depends: rpart
+         progressr,
+         fitdistrplus
 LinkingTo: Rcpp
+RoxygenNote: 7.1.1

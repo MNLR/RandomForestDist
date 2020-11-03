@@ -1,3 +1,8 @@
-useDynLib(RandomForest2, .registration=TRUE)
+useDynLib(RandomForest2,
+          .registration=TRUE)
 exportPattern("^[[:alpha:]]+")
 importFrom(Rcpp, evalCpp)
+export(gammaNLLMLE)
+export(gammaLLMME)
+export(gammaLLmean)
+importFrom(fitdistrplus, fitdist)
