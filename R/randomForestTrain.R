@@ -12,7 +12,9 @@ randomForestTrain <- function(x, y = NULL,
                              parallel.plan,
                              workers,
                              weights,
-                             parms){
+                             parms,
+                             remove.leaf.info = FALSE){
+  # Note that remove.leaf.info does not permit a posteriori estimation
 
   lapply.opt <- "future_lapply"
 
@@ -38,6 +40,7 @@ randomForestTrain <- function(x, y = NULL,
   mc$replace <- NULL
   mc$sampsize <- NULL
   mc$parallel.plan <- NULL
+  mc$remove.leaf.info <- NULL
 
 
   mc[[1]] <- quote(rpart)
@@ -50,13 +53,12 @@ randomForestTrain <- function(x, y = NULL,
   mc$cp <- -Inf  # Ensures negative nll values are handled correctly
   mc$maxdepth <- maxdepth
   mc$xval <- 0
-  if (!missing(method)) {
-    mc$method <- method
-  }
+
+  if (!missing(method)) mc$method <- method
   if (!missing(weights)) mc$weights <- weights
   if (!missing(parms)) mc$parms <- parms
 
-  if (is.null(dim(x))) x <- matrix(x)
+  if (is.null(dim(x))) x <- matrix(x, nrow = length(x))
   nrx <- nrow(x)
 
 
@@ -64,9 +66,9 @@ randomForestTrain <- function(x, y = NULL,
   with_progress({
     p <- progressor(along = idxS)
     if (lapply.opt == "future_lapply") {
-      rf <- future_lapply(future.packages = "rpart", future.seed = T,
+      rf <- future_lapply(future.packages = "rpart",
+                          future.seed = T, future.stdout = NA,
                           X = idxS, FUN = function(idxt){
-                            p()
 
                             sid <- sample(1:nrx, size = sampsize, replace = replace)
                             x <- x[sid, ]
@@ -75,14 +77,17 @@ randomForestTrain <- function(x, y = NULL,
 
                             tree <- eval(mc)
                             mc <- NULL
-                            tree$where <- NULL
-                            tree$y <- NULL
+                            if (remove.leaf.info){
+                              tree$where <- NULL
+                              tree$y <- NULL
+                            }
+
+                            p(message = sprintf("Tree %g/%g", idxt, ntree))
 
                             return(tree)
                           })
     } else {
       rf <- lapply(X = idxS, FUN = function(idxt){
-        p()
 
         sid <- sample(1:nrx, size = sampsize, replace = replace)
         x <- x[sid, ]
@@ -91,8 +96,12 @@ randomForestTrain <- function(x, y = NULL,
 
           tree <- eval(mc)
           mc <- NULL
-          tree$where <- NULL
-          tree$y <- NULL
+          if (remove.leaf.info){
+            tree$where <- NULL
+            tree$y <- NULL
+          }
+
+          p(message = sprintf("Tree %g/%g", idxt, ntree))
 
           return(tree)
         })
