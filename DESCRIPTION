@@ -11,6 +11,7 @@ Imports: Rcpp (>= 1.0.5)
 Depends: rpart,
          future.apply,
          progressr,
-         fitdistrplus
+         fitdistrplus, 
+         qmap
 LinkingTo: Rcpp
 RoxygenNote: 7.1.1

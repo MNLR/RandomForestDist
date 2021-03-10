@@ -96,24 +96,69 @@ rpart.predict.leaves <- function (rp, newdata, type = "where")
   return (leaves)
 }
 
+
 predictLeaves <- function(model, newdata){
-  prl <-
-    lapply(model, function(tr){
-      pr.leaves <- rpart.predict.leaves(tr,
-                                        newdata = newdata,
-                                        type = "where")
-      pr.leaveselements <- lapply(pr.leaves,
-                                  function(ll) tr$y[which(ll == tr$where)])
-    })
+  y.original <- model[[1]]$call$data$y
 
-  return(
-    lapply(1:length(prl[[1]]),
-           function(ix) {
-             do.call(c, lapply(prl, function(tr){
-               return(tr[[ix]])
-             })
+  if (class(y.original) == "factor"){
+    labels <- levels(y.original)
+
+    tbr <-
+      simplify2array(
+        lapply(model, function(tr){
+          tbr <- predict(object = tr, newdata = newdata,
+                         type = "matrix")[, 2:(length(labels)+1)]
+          colnames(tbr) <- labels
+          return(tbr)
+        })
+      )
+
+    tbr <- apply(tbr, MARGIN = c(1,2), sum) #Information per leaf is lost
+
+  } else if (model[[1]]$method == "bernoulliLL") {
+    labels <- c("0", "1")
+
+    tbr <-
+      simplify2array(
+        lapply(model, function(tr){
+          tbr <- predict(object = tr,
+                         newdata = newdata, type = "matrix")
+
+          return(tbr)
+        })
+      )
+
+    tbr <- sapply(1:dim(tbr)[1],
+           function(iinst){
+             nn <- sum(tbr[iinst, , ][2,])
+             return(
+              sum((tbr[iinst, , ][1,])*(tbr[iinst, , ][2,]))/nn
              )
-           })
-  )
+            })
 
+  } else {
+    prl <-
+      lapply(model, function(tr){
+        pr.leaves <- rpart.predict.leaves(tr,
+                                          newdata = newdata,
+                                          type = "where")
+        pr.leaveselements <- lapply(pr.leaves,
+                                    function(ll){
+                                      tr$y[which(ll == tr$where)]
+                                    })
+
+        return(pr.leaveselements)
+      })
+
+    tbr <-
+      lapply(1:length(prl[[1]]),
+             function(ix) {
+               do.call(c, lapply(prl, function(tr){
+                 return(tr[[ix]])
+               })
+               )
+             })
+  }
+
+  return(tbr)
 }

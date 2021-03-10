@@ -1,7 +1,7 @@
 #' @export
 
 randomForestTrain <- function(x, y = NULL,
-                             ntree = 500,
+                             ntree = 100,
                              mtry = if (!is.null(y) && !is.factor(y)) max(floor(ncol(x)/3), 1) else floor(sqrt(ncol(x))),
                              minsplit = if (!is.null(y) && !is.factor(y)) 5 else 1,
                              minbucket = minsplit/3,
