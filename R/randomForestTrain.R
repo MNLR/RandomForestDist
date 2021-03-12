@@ -18,10 +18,10 @@
 #' drawn with replacement?
 #' @param sampsize Size of the samples of \code{x}
 #' @param parallel.plan Controls parallel execution, which is handled by package
-#' \code{future.apply}. The default value, \code{NA}, does not use parallel execution. If
-#' set to \code{NULL}, retains the \code{plan()} of the session. Otherwise this parameter
+#' \code{future.apply}. If left as-is or set to \code{NULL}, retains the \code{plan()} of the session. Otherwise this parameter
 #' corresponds to \code{plan(strategy = parallel.plan)}. Set it to \code{multisession} for
 #' parallel execution and to \code{sequential} to override plan to sequential.
+#' \code{NA} avoids the use of \code{future.apply::future_lapply()}.
 #' @param workers The number of workers. By default uses the maximum available cores.
 #' @param weights \code{weights} as pased to \code{rpart::rpart()}.
 #' @param parms \code{parms} as pased to \code{rpart::rpart()}.
@@ -141,6 +141,8 @@ randomForestTrain <- function(x, y = NULL,
     }
 
   })
+
+  class(rf) <- "RandomForest"
 
   return(rf)
 }

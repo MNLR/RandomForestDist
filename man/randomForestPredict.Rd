@@ -9,7 +9,7 @@ randomForestPredict(
   newdata,
   method = NULL,
   bagging.function = mean,
-  parallel.plan = NA,
+  parallel.plan = NULL,
   workers = NULL,
   ...
 )
@@ -39,14 +39,6 @@ Maximum Spacing Estimation.
 \item{bagging.function}{The bagging (aggregation) function if bagging is used,
 using \code{method = NULL}. Otherwise ignored.
 Use \code{NA} to return the whole set of predictions for all the trees in the forest.}
-
-\item{parallel.plan}{Controls parallel execution, which is handled by package
-\code{future.apply}. The default value, \code{NA}, does not use parallel execution. If
-set to \code{NULL}, retains the \code{plan()} of the session. Otherwise this parameter
-corresponds to \code{plan(strategy = parallel.plan)}. Set it to \code{multisession} for
-parallel execution and to \code{sequential} to override plan to sequential.}
-
-\item{workers}{The number of workers. By default uses the maximum available cores.}
 
 \item{...}{Either optional arguments for the bagging function or additional arguments
 to \code{fitdistrplus::fitdist()}}

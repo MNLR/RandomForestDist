@@ -49,10 +49,10 @@ drawn with replacement?}
 \item{sampsize}{Size of the samples of \code{x}}
 
 \item{parallel.plan}{Controls parallel execution, which is handled by package
-\code{future.apply}. The default value, \code{NA}, does not use parallel execution. If
-set to \code{NULL}, retains the \code{plan()} of the session. Otherwise this parameter
+\code{future.apply}. If left as-is or set to \code{NULL}, retains the \code{plan()} of the session. Otherwise this parameter
 corresponds to \code{plan(strategy = parallel.plan)}. Set it to \code{multisession} for
-parallel execution and to \code{sequential} to override plan to sequential.}
+parallel execution and to \code{sequential} to override plan to sequential.
+\code{NA} avoids the use of \code{future.apply::future_lapply()}.}
 
 \item{workers}{The number of workers. By default uses the maximum available cores.}
 

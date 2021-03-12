@@ -131,14 +131,14 @@ predictLeaves <- function(model, newdata){
     prl <-
       lapply(model, function(tr){
         pr.leaves <- rpartPredictLeaves(tr,
-                                        newdata = newdata,
-                                        type = "where")
+                                        newdata = newdata
+                                        )
         pr.leaveselements <- lapply(pr.leaves,
                                     function(ll){
                                       tr$y[which(ll == tr$where)]
                                     })
 
-        return(pr.leaveselements)
+        return( pr.leaveselements )
       })
 
     tbr <-

@@ -2,12 +2,8 @@ aposterioriEstimation <- function(model, newdata, method, split.function,
                                   ... = ...){
 
   if (method == "random.sample"){
-    tbr <-
-      sapply(1:nrow(newdata), function(isamp){
-        sample(size = 1,
-               x = predictLeaves(model, matrix(newdata[isamp, ], nrow = 1))[[1]]
-               )
-      })
+    prl <- predictLeaves(model, newdata)
+    tbr <- sapply(prl, FUN = sample, size = 1)
   } else {
 
     if (method == "aposteriori") method <- "mme"
@@ -39,21 +35,12 @@ aposterioriEstimation <- function(model, newdata, method, split.function,
           split.function == "gammaLLBC3") distr <- "gamma"
       else if (split.function == "anova") distr <- "normal"
       else stop("Method not found, cannot infer distribution")
-      with_progress({
-        p <- progressor(along = idxS)
-        tbr <-
-          future_lapply(X = idxS, FUN = function(isamp) {
-            fitdist( predictLeaves(model,
-                                   newdata = data.frame(
-                                     matrix(newdata[isamp, ], nrow = 1)
-                                   )
-                                   )[[1]],
-                     distr = distr,
-                     method = method
-            )
-            p()
-          })
-      })
+
+      prl <- predictLeaves(model, newdata)
+      tbr <-
+        lapply(prl, function(ls){
+          fitdist( data = ls, distr = distr, method = method )
+        })
     }
   }
 

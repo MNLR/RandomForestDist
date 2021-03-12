@@ -24,12 +24,6 @@
 #' @param bagging.function The bagging (aggregation) function if bagging is used,
 #'  using \code{method = NULL}. Otherwise ignored.
 #'  Use \code{NA} to return the whole set of predictions for all the trees in the forest.
-#' @param parallel.plan Controls parallel execution, which is handled by package
-#' \code{future.apply}. The default value, \code{NA}, does not use parallel execution. If
-#' set to \code{NULL}, retains the \code{plan()} of the session. Otherwise this parameter
-#' corresponds to \code{plan(strategy = parallel.plan)}. Set it to \code{multisession} for
-#' parallel execution and to \code{sequential} to override plan to sequential.
-#' @param workers The number of workers. By default uses the maximum available cores.
 #' @param ... Either optional arguments for the bagging function or additional arguments
 #' to \code{fitdistrplus::fitdist()}
 
@@ -37,7 +31,7 @@
 randomForestPredict <- function(model, newdata,
                                 method = NULL,
                                 bagging.function = mean,
-                                parallel.plan = NA,
+                                parallel.plan = NULL,
                                 workers = NULL,
                                 ...){
 
@@ -53,7 +47,7 @@ randomForestPredict <- function(model, newdata,
     newdata <- data.frame(newdata)
     names(newdata) <- "x"
   } else{
-    newdata <- data.frame(newdata)
+    if (!is.data.frame(newdata)) newdata <- data.frame(newdata)
   }
 
   split.function <- model[[1]]$method
@@ -65,19 +59,13 @@ randomForestPredict <- function(model, newdata,
                                                             type = prediction.type))
     )
     if (!is.na(bagging.function)){
-      tbr <- apply(X = tbr, MARGIN = c(1,2), FUN = bagging.function, ... = ...)
+      tbr <- apply(X = tbr,
+                   MARGIN = seq(1, length(dim(tbr))-1),
+                   FUN = bagging.function, ... = ...)
     }
   } else {
     if (is.na(method) || method == "leaves") tbr <- predictLeaves(model, newdata)
     else {
-      if (!is.null(parallel.plan)) {
-        o.plan <- plan()
-        plan(parallel.plan,
-             workers = if (is.null(workers) || workers == 0) (availableCores()) else workers
-            )
-
-        on.exit(plan(o.plan))
-      }
       tbr <- aposterioriEstimation(model = model,
                                    newdata = newdata,
                                    method = method,
