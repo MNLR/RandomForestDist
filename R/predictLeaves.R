@@ -1,27 +1,37 @@
-rpart.predict.leaves <- function (rp, newdata, type = "where")
-{
-  #
-  # With a tip of the hat to Yuji at
-  # http://stackoverflow.com/questions/5102754/
-  # search-for-corresponding-node-in-a-regression-tree-using-rpart
-  #
-  if (type == "where") {
-    rp$frame$yval <- 1:nrow(rp$frame)
-    should.be.leaves <- which(rp$frame[, 1] == "<leaf>")
-  } else if (type == "leaf") {
-    rp$frame$yval <- rownames(rp$frame)
-    should.be.leaves <- rownames(rp$frame)[rp$frame[, 1] == "<leaf>"]
+isDescendant <- function (all.leaves, node) {
+  # If no leaves are given, get out.
+  # Convert the others to numeric, because they may have started as row numbers.
+  if (length (all.leaves) == 0) return (logical (0))
+  all.leaves <- as.numeric (all.leaves); node <- as.numeric (node)
+  if (missing (node)) return (NA)
+
+  result <- rep (FALSE, length (all.leaves))
+  for (i in 1:length (all.leaves)) {
+    LEAF <- all.leaves[i]
+    while (LEAF > node) {
+      LEAF <- trunc (LEAF/2)
+      if (LEAF == node) result[i] <- TRUE
+      break
+    }
   }
-  else stop ("Type must be either 'where' or 'leaf'")
-  #
+  return (result)
+}
+
+
+rpartPredictLeaves <- function(rp, newdata){
+  # search-for-corresponding-node-in-a-regression-tree-using-rpart
+
+  rp$frame$yval <- 1:nrow(rp$frame)
+  should.be.leaves <- which(rp$frame[, 1] == "<leaf>")
+
   # Sometimes -- I don't know why -- the rpart.predict() function will
   # give back a "leaf membership" that's not a leaf. See if that's true.
-  #
-  leaves <- predict(rp, newdata = newdata, type = "vector")
-  should.be.leaves <- which (rp$frame[,1] == "<leaf>")
+  # Thanks to  http://stackoverflow.com/questions/5102754/
+
+  leaves <- predict(rp, newdata = newdata, type = "vector") # vector of "int"
+
   bad.leaves <- leaves[!is.element (leaves, should.be.leaves)]
-  if (length (bad.leaves) == 0)
-    return (leaves)
+  if (length (bad.leaves) == 0) return (leaves)
   #
   #
   # If we got here there are some elements of "leaves" that are not in
@@ -41,30 +51,7 @@ rpart.predict.leaves <- function (rp, newdata, type = "where")
   # produces a logical of the same length whose ith entry is TRUE if that
   # leaf number is a descendant of node.
   #
-  is.descendant <- function (all.leaves, node) {
-    #
-    # If no leaves are given, get out. Convert the others to numeric, because
-    # they may have started as row numbers.
-    #
-    if (length (all.leaves) == 0) return (logical (0))
-    all.leaves <- as.numeric (all.leaves); node <- as.numeric (node)
-    if (missing (node)) return (NA)
-    #
-    # Set up result. Then loop over leaf indices. For each one just keep
-    # computing trunc(thing/2) until it's equal to node. If it gets there,
-    # it's a descendant. If it gets to be < node, it isn't. Quit.
-    #
-    result <- rep (FALSE, length (all.leaves))
-    for (i in 1:length (all.leaves)) {
-      LEAF <- all.leaves[i]
-      while (LEAF > node) {
-        LEAF <- trunc (LEAF/2)
-        if (LEAF == node) result[i] <- TRUE
-        break
-      }
-    }
-    return (result)
-  }
+
   #
   # Okay. Look through each unique bad entry in u.nodes. For each
   # one, figure out which leaves are its descendants, then consult
@@ -81,7 +68,7 @@ rpart.predict.leaves <- function (rp, newdata, type = "where")
   # Loop over the set of nodes that aren't leaves but think they are.
   #
   for (u in 1:length (u.bad.nodes)) {
-    desc.vec <- is.descendant (all.nodes, u.bad.nodes[u])
+    desc.vec <- isDescendant(all.nodes, u.bad.nodes[u])
     #
     # Use "all.nodes" to extrac from where.tbl only those entries that
     # belong to legitimate leaves. Then pull out the descendants.
@@ -95,6 +82,10 @@ rpart.predict.leaves <- function (rp, newdata, type = "where")
   }
   return (leaves)
 }
+
+
+
+
 
 
 predictLeaves <- function(model, newdata){
@@ -139,9 +130,9 @@ predictLeaves <- function(model, newdata){
   } else {
     prl <-
       lapply(model, function(tr){
-        pr.leaves <- rpart.predict.leaves(tr,
-                                          newdata = newdata,
-                                          type = "where")
+        pr.leaves <- rpartPredictLeaves(tr,
+                                        newdata = newdata,
+                                        type = "where")
         pr.leaveselements <- lapply(pr.leaves,
                                     function(ll){
                                       tr$y[which(ll == tr$where)]

@@ -1,20 +1,50 @@
 #' @export
+#' @title Train Random Forest model
+#' @description Train a random forest for predictors \code{x} and predictands \code{y}.
+#' For each tree a bootstrap sample is drawn from \code{x}. By default these samples are
+#' drawn with replacement (\code{replace = TRUE}), and have size \code{.632*nrow(x)}.
+#' @param x The predictors, in matrix form.
+#' @param y The predictands, a vector.
+#' @param ntree Number of trees.
+#' @param mtry Number of predictors randomly used as candidate split.
+#' Default is \code{sqrt(ncol(x))} for classification and \code{ncol(x)/3} for
+#' regression
+#' @param minsplit Minimum number of elements to attempt a split.
+#' @param minbucket Minimum terminal leaf size, i.e. the minimum number of observations
+#' that must be present on a terminal leaf.
+#' @param maxdepth Maximum depth of the trees.
+#' @param method The split function.
+#' @param replace Either \code{TRUE} or \code{FALSE}. Should samples of \code{x} be
+#' drawn with replacement?
+#' @param sampsize Size of the samples of \code{x}
+#' @param parallel.plan Controls parallel execution, which is handled by package
+#' \code{future.apply}. The default value, \code{NA}, does not use parallel execution. If
+#' set to \code{NULL}, retains the \code{plan()} of the session. Otherwise this parameter
+#' corresponds to \code{plan(strategy = parallel.plan)}. Set it to \code{multisession} for
+#' parallel execution and to \code{sequential} to override plan to sequential.
+#' @param workers The number of workers. By default uses the maximum available cores.
+#' @param weights \code{weights} as pased to \code{rpart::rpart()}.
+#' @param parms \code{parms} as pased to \code{rpart::rpart()}.
+#' @param remove.leaf.info Reduces the memory usage of the trees. This should not be
+#' set to \code{TRUE} unless there are memory issues. NOTE: Setting this to \code{TRUE}
+#' makes a posteriori estimation not available.
 
 randomForestTrain <- function(x, y = NULL,
-                             ntree = 100,
-                             mtry = if (!is.null(y) && !is.factor(y)) max(floor(ncol(x)/3), 1) else floor(sqrt(ncol(x))),
-                             minsplit = if (!is.null(y) && !is.factor(y)) 5 else 1,
-                             minbucket = minsplit/3,
-                             maxdepth = 30,
-                             method,
-                             replace = TRUE,
-                             sampsize = if (replace) nrow(x) else ceiling(.632*nrow(x)),
-                             parallel.plan,
-                             workers,
-                             weights,
-                             parms,
-                             remove.leaf.info = FALSE){
-  # Note that remove.leaf.info does not permit a posteriori estimation
+                              ntree = 100,
+                              mtry = if (!is.null(y) && !is.factor(y))
+                                        max(floor(ncol(x)/3), 1)
+                                     else floor(sqrt(ncol(x))),
+                              minsplit = if (!is.null(y) && !is.factor(y)) 5 else 1,
+                              minbucket = minsplit/3,
+                              maxdepth = 30,
+                              method,
+                              replace = TRUE,
+                              sampsize = if (replace) nrow(x) else ceiling(.632*nrow(x)),
+                              parallel.plan,
+                              workers,
+                              weights,
+                              parms,
+                              remove.leaf.info = FALSE){
 
   lapply.opt <- "future_lapply"
 
@@ -24,7 +54,10 @@ randomForestTrain <- function(x, y = NULL,
     else{
       o.plan <- plan()
       if (missing(workers)) plan(parallel.plan)
-      else plan(parallel.plan, workers = if (is.null(workers) || workers == 0) (availableCores()) else workers)
+      else plan(parallel.plan,
+                workers = if (is.null(workers) || workers == 0) (availableCores())
+                          else workers
+                )
       on.exit(plan(o.plan), add = TRUE)
     }
   }
@@ -50,7 +83,7 @@ randomForestTrain <- function(x, y = NULL,
   mc$mtry <- mtry
   mc$minsplit <- minsplit
   mc$minbucket <- minbucket
-  mc$cp <- -Inf  # Ensures negative nll values are handled correctly
+  mc$cp <- -Inf  # RFs do not regularize - Ensures negative nll values don't conflict
   mc$maxdepth <- maxdepth
   mc$xval <- 0
 
@@ -108,8 +141,6 @@ randomForestTrain <- function(x, y = NULL,
     }
 
   })
-
-  # if (!missing(method))  attr(rf, "split.method") <- method else attr(rf, "anova")
 
   return(rf)
 }

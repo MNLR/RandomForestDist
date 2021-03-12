@@ -1,11 +1,16 @@
-aposterioriEstimation <- function(model, newdata, method, split.function){
+aposterioriEstimation <- function(model, newdata, method, split.function,
+                                  ... = ...){
 
   if (method == "random.sample"){
     tbr <-
       sapply(1:nrow(newdata), function(isamp){
-        sample(size = 1, x = predictLeaves(model, matrix(newdata[isamp, ], nrow = 1) )[[1]])
+        sample(size = 1,
+               x = predictLeaves(model, matrix(newdata[isamp, ], nrow = 1))[[1]]
+               )
       })
   } else {
+
+    if (method == "aposteriori") method <- "mme"
     idxS <- 1:nrow(newdata)
     if (split.function == "bernoulliGammaLLMME"){
       with_progress({
@@ -39,10 +44,12 @@ aposterioriEstimation <- function(model, newdata, method, split.function){
         tbr <-
           future_lapply(X = idxS, FUN = function(isamp) {
             fitdist( predictLeaves(model,
-                                   newdata = data.frame( matrix(newdata[isamp, ], nrow = 1) )
-            )[[1]] ,
-            distr = distr,
-            method = method
+                                   newdata = data.frame(
+                                     matrix(newdata[isamp, ], nrow = 1)
+                                   )
+                                   )[[1]],
+                     distr = distr,
+                     method = method
             )
             p()
           })
