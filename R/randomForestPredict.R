@@ -38,10 +38,6 @@ randomForestPredict <- function(model, newdata,
                                 distr = NULL,
                                 ...){
 
-  # ... optional arguments to bagging function
-  # bagging function = NA -> return all trees' predictions
-  # method = "leaves": Return all leaves' observed values
-  # else argument to fitdistrplus::fitdist()
   if (model[[1]]$method == "class") prediction.type = "prob"
   else prediction.type <- "matrix"
 
@@ -61,7 +57,8 @@ randomForestPredict <- function(model, newdata,
                                                             newdata = newdata,
                                                             type = prediction.type))
     )
-    if (!is.na(bagging.function)){
+    if (!is.function(bagging.function) && is.na(bagging.function)) {}
+    else {
       tbr <- apply(X = tbr,
                    MARGIN = seq(1, length(dim(tbr))-1),
                    FUN = bagging.function, ... = ...)

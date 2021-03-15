@@ -48,10 +48,13 @@ drawn with replacement?}
 
 \item{sampsize}{Size of the samples of \code{x}}
 
-\item{parallel.plan}{Controls parallel execution, which is handled by package
-\code{future.apply}. If left as-is or set to \code{NULL}, retains the \code{plan()} of the session. Otherwise this parameter
-corresponds to \code{plan(strategy = parallel.plan)}. Set it to \code{multisession} for
-parallel execution and to \code{sequential} to override plan to sequential.
+\item{parallel.plan}{Controls parallel execution, which is handled by and requires the
+package \code{future.apply}. If this package is not installed parallel execution will
+ not be used. If left missing or set to \code{NULL} (default), the function uses the
+current \code{future::plan()} of the session. Set this parameter to \code{"auto"} for
+automatic parallelization, which avoids dealing with futures outside the function.
+In any other case this parameter corresponds to
+\code{futute::plan(strategy = parallel.plan)}, check their corresponding help pages.
 \code{NA} avoids the use of \code{future.apply::future_lapply()}.}
 
 \item{workers}{The number of workers. By default uses the maximum available cores.}

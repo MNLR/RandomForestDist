@@ -17,10 +17,13 @@
 #' @param replace Either \code{TRUE} or \code{FALSE}. Should samples of \code{x} be
 #' drawn with replacement?
 #' @param sampsize Size of the samples of \code{x}
-#' @param parallel.plan Controls parallel execution, which is handled by package
-#' \code{future.apply}. If left as-is or set to \code{NULL}, retains the \code{plan()} of the session. Otherwise this parameter
-#' corresponds to \code{plan(strategy = parallel.plan)}. Set it to \code{multisession} for
-#' parallel execution and to \code{sequential} to override plan to sequential.
+#' @param parallel.plan Controls parallel execution, which is handled by and requires the
+#' package \code{future.apply}. If this package is not installed parallel execution will
+#'  not be used. If left missing or set to \code{NULL} (default), the function uses the
+#' current \code{future::plan()} of the session. Set this parameter to \code{"auto"} for
+#' automatic parallelization, which avoids dealing with futures outside the function.
+#' In any other case this parameter corresponds to
+#' \code{futute::plan(strategy = parallel.plan)}, check their corresponding help pages.
 #' \code{NA} avoids the use of \code{future.apply::future_lapply()}.
 #' @param workers The number of workers. By default uses the maximum available cores.
 #' @param weights \code{weights} as pased to \code{rpart::rpart()}.
@@ -46,21 +49,35 @@ randomForestTrain <- function(x, y = NULL,
                               parms,
                               remove.leaf.info = FALSE){
 
-  lapply.opt <- "future_lapply"
 
-  if (missing(parallel.plan) || is.null(parallel.plan)) parallel.plan <- plan()
-  else {
-    if (is.na(parallel.plan)) lapply.opt <- "lapply"
-    else{
-      o.plan <- plan()
-      if (missing(workers)) plan(parallel.plan)
-      else plan(parallel.plan,
-                workers = if (is.null(workers) || workers == 0) (availableCores())
-                          else workers
-                )
-      on.exit(plan(o.plan), add = TRUE)
+
+  if (requireNamespace("future", quietly = TRUE) &&
+      requireNamespace("future.apply", quietly = TRUE)
+      ) {
+    lapply.opt <- "future_lapply"
+    if (missing(parallel.plan) || is.null(parallel.plan)){
+      parallel.plan <- future::plan()
     }
+    else if (is.character(parallel.plan) && parallel.plan == "auto") {
+      parallel.plan <- future::plan(future::multisession)
+    }
+    else {
+      if (!is.list(parallel.plan) &&
+          !is.function(parallel.plan) &&
+          is.na(parallel.plan)) lapply.opt <- "lapply"
+      else{
+        o.plan <- future::plan()
+        if (missing(workers)) future::plan(parallel.plan)
+        else future::plan(parallel.plan,
+        workers = if (is.null(workers) || workers == 0) (availableCores()) else workers
+                          )
+        on.exit(future::plan(o.plan), add = TRUE)
+      }
+    }
+  } else { # package future or future.apply not available
+    lapply.opt <- "lapply"
   }
+
 
   stopifnot(sum(is.na(y)) == 0)
   stopifnot(sum(is.na(x)) == 0)
@@ -99,9 +116,9 @@ randomForestTrain <- function(x, y = NULL,
   with_progress({
     p <- progressor(along = idxS)
     if (lapply.opt == "future_lapply") {
-      rf <- future_lapply(future.packages = "rpart",
-                          future.seed = T, future.stdout = NA,
-                          X = idxS, FUN = function(idxt){
+      rf <- future.apply::future_lapply(future.packages = "rpart",
+                                        future.seed = T, future.stdout = NA,
+                                        X = idxS, FUN = function(idxt){
 
                             sid <- sample(1:nrx, size = sampsize, replace = replace)
                             x <- x[sid, ]
@@ -119,7 +136,7 @@ randomForestTrain <- function(x, y = NULL,
 
                             return(tree)
                           })
-    } else {
+    } else if (lapply.opt == "lapply"){
       rf <- lapply(X = idxS, FUN = function(idxt){
 
         sid <- sample(1:nrx, size = sampsize, replace = replace)
@@ -138,7 +155,7 @@ randomForestTrain <- function(x, y = NULL,
 
           return(tree)
         })
-    }
+    } else {stop("Internal Error: lapply.opt not set")}
 
   })
 
