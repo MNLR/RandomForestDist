@@ -1,4 +1,7 @@
-aposterioriEstimation <- function(model, newdata, method, split.function,
+#' @importFrom qmap startberngamma
+#' @importFrom fitdistrplus fitdist
+
+aposterioriEstimation <- function(model, newdata, method, split.function, distr = NULL,
                                   ... = ...){
 
   if (method == "random.sample"){
@@ -9,32 +12,27 @@ aposterioriEstimation <- function(model, newdata, method, split.function,
     if (method == "aposteriori") method <- "mme"
     idxS <- 1:nrow(newdata)
     if (split.function == "bernoulliGammaLLMME"){
-      with_progress({
-        p <- progressor(along = idxS)
-        tbr <-  future_lapply(X = idxS, FUN = function(isamp) {
-          aux <- unlist(startberngamma(
-            predictLeaves( model, matrix(newdata[isamp, ], nrow = 1) )[[1]]
-          ))
-          p()
-          return(
-            c(aux[c("prob", "shape")], rate = 1/unname(aux["scale"]))
-          )
-        })
-      })
+
+      prl <- predictLeaves(model, newdata)
+      tbr <- t(sapply(prl, FUN = function(ll) unlist(startberngamma(ll))))
+
     } else if (split.function == "class"){
       tbr <- t(
               apply(predictLeaves(model, newdata),
-                    MARGIN = 1, FUN = function(ll) ll/sum(ll))
+                    MARGIN = 1,
+                    FUN = function(ll) ll/sum(ll))
               )
     } else if (split.function == "bernoulliLL"){
       tbr <- predictLeaves(model, newdata)
     } else {
-      if (split.function == "gammaLLMME" ||
-          split.function == "gammaLLmean" ||
-          split.function == "gammaDeviation" ||
-          split.function == "gammaLLBC3") distr <- "gamma"
-      else if (split.function == "anova") distr <- "normal"
-      else stop("Method not found, cannot infer distribution")
+      if (is.null(distr)){
+        if (split.function == "gammaLLMME" ||
+            split.function == "gammaLLmean" ||
+            split.function == "gammaDeviation" ||
+            split.function == "gammaLLBC3") distr <- "gamma"
+        else if (split.function == "anova") distr <- "norm"
+        else stop("Method not found and cannot infer distribution")
+      }
 
       prl <- predictLeaves(model, newdata)
       tbr <-

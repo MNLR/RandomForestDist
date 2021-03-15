@@ -9,8 +9,7 @@ randomForestPredict(
   newdata,
   method = NULL,
   bagging.function = mean,
-  parallel.plan = NULL,
-  workers = NULL,
+  distr = NULL,
   ...
 )
 }
@@ -39,6 +38,11 @@ Maximum Spacing Estimation.
 \item{bagging.function}{The bagging (aggregation) function if bagging is used,
 using \code{method = NULL}. Otherwise ignored.
 Use \code{NA} to return the whole set of predictions for all the trees in the forest.}
+
+\item{distr}{Only used if using aposteriori estimation
+(\code{method = "aposteriori", "mle", ...}. The probability distribution to be estimated,
+parameter passed to \code{fitdistrplus::fitdist()}. Will be automatically infered if set
+to \code{NULL}.}
 
 \item{...}{Either optional arguments for the bagging function or additional arguments
 to \code{fitdistrplus::fitdist()}}
