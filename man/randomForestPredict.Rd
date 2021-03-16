@@ -10,6 +10,7 @@ randomForestPredict(
   method = NULL,
   bagging.function = mean,
   distr = NULL,
+  simplify.estimation = TRUE,
   ...
 )
 }
@@ -43,6 +44,9 @@ Use \code{NA} to return the whole set of predictions for all the trees in the fo
 (\code{method = "aposteriori", "mle", ...}. The probability distribution to be estimated,
 parameter passed to \code{fitdistrplus::fitdist()}. Will be automatically infered if set
 to \code{NULL}.}
+
+\item{simplify.estimation}{Only used if using aposteriori estimation. Set to \code{FALSE}
+to return the whole output from \code{fitdistrplus::fitdist()}.}
 
 \item{...}{Either optional arguments for the bagging function or additional arguments
 to \code{fitdistrplus::fitdist()}}

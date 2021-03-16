@@ -28,6 +28,8 @@
 #' (\code{method = "aposteriori", "mle", ...}. The probability distribution to be estimated,
 #' parameter passed to \code{fitdistrplus::fitdist()}. Will be automatically infered if set
 #' to \code{NULL}.
+#' @param simplify.estimation Only used if using aposteriori estimation. Set to \code{FALSE}
+#' to return the whole output from \code{fitdistrplus::fitdist()}.
 #' @param ... Either optional arguments for the bagging function or additional arguments
 #' to \code{fitdistrplus::fitdist()}
 
@@ -36,6 +38,7 @@ randomForestPredict <- function(model, newdata,
                                 method = NULL,
                                 bagging.function = mean,
                                 distr = NULL,
+                                simplify.estimation = TRUE,
                                 ...){
 
   if (model[[1]]$method == "class") prediction.type = "prob"
@@ -71,9 +74,13 @@ randomForestPredict <- function(model, newdata,
                                    method = method,
                                    split.function = split.function,
                                    distr = distr,
+                                   simplify.estimation = simplify.estimation,
                                    ... = ...)
     }
   }
+
+  class(tbr) <- "RandomForest2.prediction"
+  attr(tbr, "split.function") <- split.function
 
   return(tbr)
 }

@@ -1,8 +1,9 @@
 useDynLib(RandomForest2, .registration=TRUE)
-exportPattern("^[[:alpha:]]+")
-importFrom(Rcpp, evalCpp)
-importFrom(fitdistrplus, fitdist)
+
 export(randomForestPredict)
 export(randomForestTrain)
+export(randomForestSimulate)
 import(rpart)
 import(progressr)
+importFrom(Rcpp, evalCpp)
+importFrom(fitdistrplus, fitdist)

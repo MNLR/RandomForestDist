@@ -2,6 +2,7 @@
 #' @importFrom fitdistrplus fitdist
 
 aposterioriEstimation <- function(model, newdata, method, split.function, distr = NULL,
+                                  simplify.estimation = TRUE,
                                   ... = ...){
 
   if (method == "random.sample"){
@@ -25,20 +26,18 @@ aposterioriEstimation <- function(model, newdata, method, split.function, distr 
     } else if (split.function == "bernoulliLL"){
       tbr <- predictLeaves(model, newdata)
     } else {
-      if (is.null(distr)){
-        if (split.function == "gammaLLMME" ||
-            split.function == "gammaLLmean" ||
-            split.function == "gammaDeviation" ||
-            split.function == "gammaLLBC3") distr <- "gamma"
-        else if (split.function == "anova") distr <- "norm"
-        else stop("Method not found and cannot infer distribution")
-      }
+      if (is.null(distr)) distr <- guessDistribution(split.function)
 
       prl <- predictLeaves(model, newdata)
       tbr <-
         lapply(prl, function(ls){
           fitdist( data = ls, distr = distr, method = method )
         })
+      if (simplify.estimation){
+        tbr <- lapply(tbr, function(ls) ls$estimate)
+        if (length(tbr[[1]]) == 1) tbr <- do.call(c, tbr)
+        else tbr <- do.call(rbind, tbr)
+      }
     }
   }
 

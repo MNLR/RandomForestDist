@@ -5,19 +5,27 @@
 
 using namespace Rcpp;
 
-// rcpp_hello_world
-List rcpp_hello_world();
-RcppExport SEXP _RandomForest2_rcpp_hello_world() {
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
+// simulateDist
+NumericMatrix simulateDist(int n, NumericMatrix prediction, String distribution);
+RcppExport SEXP _RandomForest2_simulateDist(SEXP nSEXP, SEXP predictionSEXP, SEXP distributionSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpp_hello_world());
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type prediction(predictionSEXP);
+    Rcpp::traits::input_parameter< String >::type distribution(distributionSEXP);
+    rcpp_result_gen = Rcpp::wrap(simulateDist(n, prediction, distribution));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_RandomForest2_rcpp_hello_world", (DL_FUNC) &_RandomForest2_rcpp_hello_world, 0},
+    {"_RandomForest2_simulateDist", (DL_FUNC) &_RandomForest2_simulateDist, 3},
     {NULL, NULL, 0}
 };
 
