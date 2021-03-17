@@ -17,11 +17,11 @@ The [modified version of rpart](https://github.com/MNLR/rpart) has to be install
 ```
 devtools::install_github("MNLR/rpart")
 ```
-Once the dependency is installed, use
+Once the dependency is installed, install the additional dependencies from CRAN and the package itself with
 
 ```
+install.packages(c("progressr", "qmap", "fitdistrplus"))
 devtools::install_github("MNLR/RandomForest2")
 ```
-to install RandomForest2.
 
 Note that, if `devtools` is not already installed, it can be installed from CRAN using the command `install.packages("devtools")`. 
