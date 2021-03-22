@@ -8,6 +8,7 @@ The package's new methodologies were proposed and thoroughly analyzed — in the
 
 * A new approach to regression and classification based on random forests, which employs them as a first step to predict the whole probability distribution of the predictands Y given the predictors X. It has proven to accurately capture Y | X, thus making the approach very useful both for estocastic simulations as well as to characterize the uncertainty of the predictions. We call this approach "a posteriori".
 
+Refer to the [notebook](https://github.com/MNLR/RandomForest2/blob/master/WorkedExample.ipynb) included with this package for examples of usage. 
 
 ### Installation
 The installation process is as follows.
