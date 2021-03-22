@@ -8,7 +8,7 @@ Maintainer: Mikel N. Legasa <mikel.legasa@unican.es>
 Description: Random Forests with additional functionality, built on top of rpart.
 License: GPL (>= 2)
 Depends: R (>= 3.5.0),
-         rpart,
+         rpart (>= 5.0-1),
          progressr
 Imports: Rcpp (>= 1.0.5),
          qmap,
