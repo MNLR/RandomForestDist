@@ -2,10 +2,9 @@
 #include "simulate.h"
 using namespace Rcpp;
 
-int checkConsistencyAndGetCode(NumericMatrix prediction, String distribution){
-
-  if (prediction.ncol() != distribution_parameters[distribution])
-    stop("Number of parameters inconsistent with distribution code.");
-
-  return distribution_codes[distribution];
+void checkConsistency(NumericMatrix prediction, String distribution){
+  int nparameters = distribution_parameters[distribution];
+  if (nparameters < 0) return;
+    if (prediction.ncol() != nparameters)
+      stop("Number of parameters inconsistent with distribution code.");
 }

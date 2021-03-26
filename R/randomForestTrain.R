@@ -13,7 +13,16 @@
 #' @param minbucket Minimum terminal leaf size, i.e. the minimum number of observations
 #' that must be present on a terminal leaf.
 #' @param maxdepth Maximum depth of the trees.
-#' @param method The split function.
+#' @param method The split function. Currently supported split functions are:
+#' \code{"anova"} (default) for root mean squared error; \code{"poisson"} for poisson
+#' distributed \code{y} (expect two columns); \code{"class"} for classification of
+#' factors (default if \code{y} is factor); \code{"exp"} for survival objects;
+#' \code{"gammaLLMME"}, \code{"gammaLLmean"}, \code{"gammaLLBC3"} for the 2-parameter
+#' gamma distribution log-likelihood using moments-matching-estimation, the mean, and
+#' the BC3 estimators, respectively; \code{"bernoulliGammaLLMME"} for the 3-parameter
+#' bernoulli-gamma log likelihood; \code{"gammaDeviation"} for the deviation of the
+#' 2-parameter gamma distribution; \code{"bernoulliLL"} for the bernoulli
+#' log-likelihood (expects class \code{numeric} with \code{0,1}).
 #' @param replace Either \code{TRUE} or \code{FALSE}. Should samples of \code{x} be
 #' drawn with replacement?
 #' @param sampsize Size of the samples of \code{x}
@@ -159,7 +168,7 @@ randomForestTrain <- function(x, y = NULL,
 
   })
 
-  class(rf) <- "RandomForest"
+  class(rf) <- "RandomForest2"
 
   return(rf)
 }

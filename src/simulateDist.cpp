@@ -5,12 +5,12 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 NumericMatrix simulateDist(int n, NumericMatrix prediction, String distribution) {
 
-  int code = checkConsistencyAndGetCode(prediction, distribution);
+  checkConsistency(prediction, distribution);
   NumericMatrix simulations(prediction.nrow(), n);
 
-  switch(code) {
+  switch(distribution_codes[distribution]) {
     case 0:
-      simulations = simulateBernoulli(n, prediction);
+      simulations = simulateCategorical(n, prediction);
       break;
 
     case 1:

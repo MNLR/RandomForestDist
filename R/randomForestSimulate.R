@@ -13,11 +13,24 @@
 
 
 randomForestSimulate <- function(prediction, n = 1, distr){
-  if (class(prediction) != "RandomForest2.prediction")
-    stop("prediction must be the output of randomForestPredict()")
+  if (class(prediction) != "RandomForest2.prediction.simulable")
+    stop("Expects an object of type RandomForest2.prediction.simulable")
 
   if (missing(distr) || is.null(distr))
     distr <- guessDistribution(attr(prediction, "split.function"))
 
-  return( .Call(`_RandomForest2_simulateDist`, n, prediction, distr) )
+  simulations <- .Call(`_RandomForest2_simulateDist`, n, prediction, distr)
+
+  if (distr == "categorical") simulations <- renameClasses(simulations,
+                                                           colnames(prediction))
+
+  return(simulations)
+}
+
+
+renameClasses <- function(simulations, class.names){
+  for (i in 1:length(class.names)){
+    simulations[which( simulations == (i-1) )] <- class.names[i]
+  }
+  return(simulations)
 }

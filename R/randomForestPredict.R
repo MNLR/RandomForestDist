@@ -79,8 +79,27 @@ randomForestPredict <- function(model, newdata,
     }
   }
 
-  class(tbr) <- "RandomForest2.prediction"
   attr(tbr, "split.function") <- split.function
 
+  class(tbr) <- "RandomForest2.prediction"
+  if ( isSimulable(method, split.function) ){
+        class(tbr) <- "RandomForest2.prediction.simulable"
+  }
+
   return(tbr)
+}
+
+
+isSimulable <- function(method, split.function){
+  if (split.function == "class"){
+    condition_ <- is.null(method) || (
+                    !is.na(method) && (method != "leaves" && method != "random.sample")
+                  )
+  }
+  else{
+    condition_ <- ( !is.null(method) && !is.na(method) && (method != "leaves") &&
+                      (method != "random.sample") )
+  }
+
+  return(condition_)
 }
