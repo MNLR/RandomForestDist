@@ -10,6 +10,17 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// estimateGammaBC3
+NumericVector estimateGammaBC3(NumericVector y);
+RcppExport SEXP _RandomForest2_estimateGammaBC3(SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(estimateGammaBC3(y));
+    return rcpp_result_gen;
+END_RCPP
+}
 // simulateDist
 NumericMatrix simulateDist(int n, NumericMatrix prediction, String distribution);
 RcppExport SEXP _RandomForest2_simulateDist(SEXP nSEXP, SEXP predictionSEXP, SEXP distributionSEXP) {
@@ -25,6 +36,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_RandomForest2_estimateGammaBC3", (DL_FUNC) &_RandomForest2_estimateGammaBC3, 1},
     {"_RandomForest2_simulateDist", (DL_FUNC) &_RandomForest2_simulateDist, 3},
     {NULL, NULL, 0}
 };

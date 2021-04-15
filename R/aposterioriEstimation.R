@@ -29,10 +29,17 @@ aposterioriEstimation <- function(model, newdata, method, split.function, distr 
       if (is.null(distr)) distr <- guessDistribution(split.function)
 
       prl <- predictLeaves(model, newdata)
-      tbr <-
-        lapply(prl, function(ls){
-          fitdist( data = ls, distr = distr, method = method )
-        })
+
+      if (method != "bc3"){
+        tbr <-
+          lapply(prl, function(ls){
+            fitdist( data = ls, distr = distr, method = method )
+          })
+      } else {
+        if (distr != "gamma") stop("bc3 estimators are for the gamma distribution")
+        tbr <- estimateBC3(prl)
+        simplify.estimation <- FALSE
+      }
       if (simplify.estimation){
         tbr <- lapply(tbr, function(ls) ls$estimate)
         if (length(tbr[[1]]) == 1) tbr <- do.call(c, tbr)

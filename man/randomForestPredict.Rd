@@ -34,6 +34,9 @@ following: \code{"mle"} for Maximum Likelihood Estimation; \code{"mme"} for
 Moments Matching Estimation; \code{"qme"} for Quantile Matching Estimation;
 \code{mge} for Maximum Goodness-of-fit Estimation; \code{mse} for
 Maximum Spacing Estimation.
+\item If \code{distr = "gamma"}, \code{"bc3"} uses bc3 estimators, as defined in
+Louzada, F. et al: A Note on Bias of Closed-Form Estimators for the Gamma Distribution
+Derived From Likelihood Equations, doi: 10.1080/00031305.2018.1513376
 }}
 
 \item{bagging.function}{The bagging (aggregation) function if bagging is used,
