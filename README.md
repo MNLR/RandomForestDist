@@ -4,7 +4,7 @@ Building on a modified version of [rpart](https://cran.r-project.org/web/package
 
 * The inclussion of several split functions intended for predictand variables that are non-normally distributed. We mainly focus on the gamma two-parameter distribution (Deviation and Log Likelihood), although other distributions can be easily added through the [modified rpart package](https://github.com/MNLR/rpart).
 
-* A new approach called "a priori" which has proven to accurately capture the whole probability distribution of the predictands Y given the predictors X, allowing thus for the generation of reliable stochastic predictions. 
+* A new approach called "a posteriori" which has proven to accurately capture the whole probability distribution of the predictands Y given the predictors X, allowing thus for the generation of reliable stochastic predictions. 
 
 Please refer to the [notebook](https://github.com/MNLR/RandomForest2/blob/master/WorkedExample.ipynb) included with this package for examples of use. 
 
