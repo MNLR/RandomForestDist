@@ -11,7 +11,7 @@ Please refer to the [notebook](https://github.com/MNLR/RandomForest2/blob/master
 ### Installation
 The installation process is as follows.
 
-The [modified version of rpart](https://github.com/MNLR/rpart) has to be installed first, as RandomForest2 will not work without it. Use the command 
+The [modified version of rpart](https://github.com/MNLR/rpart) has to be installed first, as [RandomForest2](https://github.com/MNLR/RandomForest2) will not work without it. Use the command 
 
 ```
 devtools::install_github("MNLR/rpart")
