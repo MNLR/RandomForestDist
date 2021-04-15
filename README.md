@@ -1,14 +1,12 @@
 ## RandomForest2
 
-This package implements random forests [(Breiman, L. Random Forests. Machine Learning 45, 5–32, 2001)](https://doi.org/10.1023/A:1010933404324) in R, adding new functionality and split functions to encompass additional probability distributions. It is based on a modified version of the [rpart](https://cran.r-project.org/web/packages/rpart/index.html) R package that can be found [here](https://github.com/MNLR/rpart).
+Building on a modified version of [rpart](https://cran.r-project.org/web/packages/rpart/index.html) which can be found [here](https://github.com/MNLR/rpart), this package implements advanced functionalities for random forests [(Breiman, L. Random Forests. Machine Learning 45, 5–32, 2001)](https://doi.org/10.1023/A:1010933404324) which make this technique suitable for statistical downscaling of precipitation, as analyzed in the article: [MISSING]. The key elements of [RandomForest2](https://github.com/MNLR/RandomForest2) are:
 
-The package's new methodologies were proposed and thoroughly analyzed — in the context of statistical downscaling of climate — in the article: [MISSING]; and can be summarized as:
+* The inclussion of several split functions intended for predictand variables that are non-normally distributed. We mainly focus on the gamma two-parameter distribution (Deviation and Log Likelihood), although other distributions can be easily added through the [modified rpart package](https://github.com/MNLR/rpart).
 
-* The inclussion of several new split functions intended for predictand variables that are non-normally distributed. We mainly focus on the gamma two-parameter distribution (Deviation and Log Likelihood), although other distributions can be easily added through the [modified rpart package](https://github.com/MNLR/rpart).
+* A new approach called "a priori" which has proven to accurately capture the whole probability distribution of the predictands Y given the predictors X, allowing thus for the generation of reliable stochastic predictions. 
 
-* A new approach to regression and classification based on random forests, which employs them as a first step to predict the whole probability distribution of the predictands Y given the predictors X. It has proven to accurately capture Y | X, thus making the approach very useful both for estocastic simulations as well as to characterize the uncertainty of the predictions. We call this approach "a posteriori".
-
-Refer to the [notebook](https://github.com/MNLR/RandomForest2/blob/master/WorkedExample.ipynb) included with this package for examples of usage. 
+Please refer to the [notebook](https://github.com/MNLR/RandomForest2/blob/master/WorkedExample.ipynb) included with this package for examples of usage. 
 
 ### Installation
 The installation process is as follows.
@@ -18,7 +16,7 @@ The [modified version of rpart](https://github.com/MNLR/rpart) has to be install
 ```
 devtools::install_github("MNLR/rpart")
 ```
-Once the dependency is installed, install the additional dependencies from CRAN and the package itself with
+Once this dependency is installed, install the additional dependencies from CRAN and the package itself with
 
 ```
 install.packages(c("progressr", "qmap", "fitdistrplus"))
