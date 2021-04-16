@@ -9,14 +9,13 @@ Building on a modified version of [rpart](https://cran.r-project.org/web/package
 Please refer to the [notebook](https://github.com/MNLR/RandomForest2/blob/master/WorkedExample.ipynb) included in the package for examples of use. 
 
 ### Installation
-The installation process is as follows:
 
-The [modified version of rpart](https://github.com/MNLR/rpart) has to be installed first, as [RandomForest2](https://github.com/MNLR/RandomForest2) will not work without it 
+The [modified version of rpart](https://github.com/MNLR/rpart) has to be installed first, as [RandomForest2](https://github.com/MNLR/RandomForest2) will not work without it:
 
 ```
 devtools::install_github("MNLR/rpart")
 ```
-Afterwards, install the additional dependencies from CRAN and the package itself with
+Afterwards, install the additional dependencies from CRAN and the package itself:
 
 ```
 install.packages(c("progressr", "qmap", "fitdistrplus"))
