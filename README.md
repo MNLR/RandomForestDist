@@ -10,11 +10,13 @@ Please refer to the [notebook](https://github.com/MNLR/RandomForest2/blob/master
 
 ### Installation
 
-The [modified version of rpart](https://github.com/MNLR/rpart) has to be installed first, as [RandomForest2](https://github.com/MNLR/RandomForest2) will not work without it:
+
+For [RandomForest2](https://github.com/MNLR/RandomForest2) to work, the [modified version of rpart](https://github.com/MNLR/rpart) needs to be installed first:
 
 ```
 devtools::install_github("MNLR/rpart")
 ```
+
 Afterwards, install the additional dependencies from CRAN and the package itself:
 
 ```
