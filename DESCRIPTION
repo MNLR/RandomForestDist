@@ -1,6 +1,6 @@
-Package: RandomForest2
+Package: RandomForestDist
 Type: Package
-Title: Random Forests with More Loss Functions
+Title: Random Forests with More Loss Functions and Additional Functionality
 Version: 1.0
 Date: 2021-3-17
 Author: Mikel N. Legasa
