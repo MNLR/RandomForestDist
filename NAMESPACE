@@ -1,4 +1,4 @@
-useDynLib(RandomForest2, .registration=TRUE)
+useDynLib(RandomForestDist, .registration=TRUE)
 
 export(randomForestPredict)
 export(randomForestTrain)
