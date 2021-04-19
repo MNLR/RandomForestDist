@@ -19,7 +19,7 @@ randomForestSimulate <- function(prediction, n = 1, distr){
   if (missing(distr) || is.null(distr))
     distr <- guessDistribution(attr(prediction, "split.function"))
 
-  simulations <- .Call(`_RandomForest2_simulateDist`, n, prediction, distr)
+  simulations <- .Call(`_RandomForestDist_simulateDist`, n, prediction, distr)
 
   if (distr == "categorical") simulations <- renameClasses(simulations,
                                                            colnames(prediction))

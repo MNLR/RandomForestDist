@@ -2,10 +2,10 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 estimateGammaBC3 <- function(y) {
-    .Call(`_RandomForest2_estimateGammaBC3`, y)
+    .Call(`_RandomForestDist_estimateGammaBC3`, y)
 }
 
 simulateDist <- function(n, prediction, distribution) {
-    .Call(`_RandomForest2_simulateDist`, n, prediction, distribution)
+    .Call(`_RandomForestDist_simulateDist`, n, prediction, distribution)
 }
 

@@ -12,7 +12,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // estimateGammaBC3
 NumericVector estimateGammaBC3(NumericVector y);
-RcppExport SEXP _RandomForest2_estimateGammaBC3(SEXP ySEXP) {
+RcppExport SEXP _RandomForestDist_estimateGammaBC3(SEXP ySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -23,7 +23,7 @@ END_RCPP
 }
 // simulateDist
 NumericMatrix simulateDist(int n, NumericMatrix prediction, String distribution);
-RcppExport SEXP _RandomForest2_simulateDist(SEXP nSEXP, SEXP predictionSEXP, SEXP distributionSEXP) {
+RcppExport SEXP _RandomForestDist_simulateDist(SEXP nSEXP, SEXP predictionSEXP, SEXP distributionSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -36,12 +36,12 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_RandomForest2_estimateGammaBC3", (DL_FUNC) &_RandomForest2_estimateGammaBC3, 1},
-    {"_RandomForest2_simulateDist", (DL_FUNC) &_RandomForest2_simulateDist, 3},
+    {"_RandomForestDist_estimateGammaBC3", (DL_FUNC) &_RandomForestDist_estimateGammaBC3, 1},
+    {"_RandomForestDist_simulateDist", (DL_FUNC) &_RandomForestDist_simulateDist, 3},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_RandomForest2(DllInfo *dll) {
+RcppExport void R_init_RandomForestDist(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
