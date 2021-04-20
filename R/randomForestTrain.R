@@ -168,7 +168,7 @@ randomForestTrain <- function(x, y = NULL,
 
   })
 
-  class(rf) <- "RandomForest2"
+  class(rf) <- "RandomForestDist"
 
   return(rf)
 }

@@ -13,8 +13,8 @@
 
 
 randomForestSimulate <- function(prediction, n = 1, distr){
-  if (class(prediction) != "RandomForest2.prediction.simulable")
-    stop("Expects an object of type RandomForest2.prediction.simulable")
+  if (class(prediction) != "RandomForestDist.prediction.simulable")
+    stop("Expects an object of type RandomForestDist.prediction.simulable")
 
   if (missing(distr) || is.null(distr))
     distr <- guessDistribution(attr(prediction, "split.function"))

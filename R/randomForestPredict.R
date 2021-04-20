@@ -84,9 +84,9 @@ randomForestPredict <- function(model, newdata,
 
   attr(tbr, "split.function") <- split.function
 
-  class(tbr) <- "RandomForest2.prediction"
+  class(tbr) <- "RandomForestDist.prediction"
   if ( isSimulable(method, split.function) ){
-        class(tbr) <- "RandomForest2.prediction.simulable"
+        class(tbr) <- "RandomForestDist.prediction.simulable"
   }
 
   return(tbr)
