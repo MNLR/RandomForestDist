@@ -23,9 +23,11 @@
 #' bernoulli-gamma log likelihood; \code{"gammaDeviation"} for the deviation of the
 #' 2-parameter gamma distribution; \code{"bernoulliLL"} for the bernoulli
 #' log-likelihood (expects class \code{numeric} with \code{0,1}).
-#' @param replace Either \code{TRUE} or \code{FALSE}. Should samples of \code{x} be
+#' @param resample Either \code{TRUE} or \code{FALSE}. Should resampling of \code{x, y} be
+#' done?
+#' @param replace Either \code{TRUE} or \code{FALSE}. Should samples of \code{x,y} be
 #' drawn with replacement?
-#' @param sampsize Size of the samples of \code{x}
+#' @param sampsize Size of the samples of \code{x,y}
 #' @param parallel.plan Controls parallel execution, which is handled by and requires the
 #' package \code{future.apply}. If this package is not installed parallel execution will
 #'  not be used. If left missing or set to \code{NULL} (default), the function uses the
@@ -37,9 +39,10 @@
 #' @param workers The number of workers. By default uses the maximum available cores.
 #' @param weights \code{weights} as pased to \code{rpart::rpart()}.
 #' @param parms \code{parms} as pased to \code{rpart::rpart()}.
-#' @param remove.leaf.info Reduces the memory usage of the trees. This should not be
-#' set to \code{TRUE} unless there are memory issues. NOTE: Setting this to \code{TRUE}
-#' makes a posteriori estimation not available.
+#' @param keep.x Keeps a copy of the training set x for each tree. Default to FALSE, reduces
+#' the memory usage.
+#' #' @param keep.x Keeps a copy of the training set y for each tree. Default to TRUE.
+#' NOTE: Setting this to \code{FALSE} disables a posteriori estimation.
 
 randomForestTrain <- function(x, y = NULL,
                               ntree = 100,
@@ -49,14 +52,19 @@ randomForestTrain <- function(x, y = NULL,
                               minsplit = if (!is.null(y) && !is.factor(y)) 5 else 1,
                               minbucket = minsplit/3,
                               maxdepth = 30,
-                              method,
+                              method = NULL,
+                              resample = TRUE,
                               replace = TRUE,
                               sampsize = if (replace) nrow(x) else ceiling(.632*nrow(x)),
+                              oversample.binary = FALSE,
+                              oob.prunning = FALSE,
                               parallel.plan,
                               workers,
-                              weights,
-                              parms,
-                              remove.leaf.info = FALSE){
+                              weights = NULL,
+                              parms = NULL,
+                              remove.leaf.info = FALSE,
+                              keep.x = FALSE,
+                              keep.y = TRUE){
 
 
 
@@ -91,31 +99,10 @@ randomForestTrain <- function(x, y = NULL,
   stopifnot(sum(is.na(y)) == 0)
   stopifnot(sum(is.na(x)) == 0)
 
-  mc <- match.call()
-
   # mandatory, otherwise passed to rpart:
-  mc$ntree <- NULL
-  mc$workers <- NULL
-  mc$replace <- NULL
-  mc$sampsize <- NULL
-  mc$parallel.plan <- NULL
-  mc$remove.leaf.info <- NULL
+  cp <- -Inf  # RFs do not regularize - Ensures negative nll values don't conflict
+  xval <- 0
 
-
-  mc[[1]] <- quote(rpart)
-  mc$formula <- y ~ .
-  mc$x <- NULL
-  mc$y <- NULL
-  mc$mtry <- mtry
-  mc$minsplit <- minsplit
-  mc$minbucket <- minbucket
-  mc$cp <- -Inf  # RFs do not regularize - Ensures negative nll values don't conflict
-  mc$maxdepth <- maxdepth
-  mc$xval <- 0
-
-  if (!missing(method)) mc$method <- method
-  if (!missing(weights)) mc$weights <- weights
-  if (!missing(parms)) mc$parms <- parms
 
   if (is.null(dim(x))) x <- matrix(x, nrow = length(x))
   nrx <- nrow(x)
@@ -126,20 +113,55 @@ randomForestTrain <- function(x, y = NULL,
     p <- progressor(along = idxS)
     if (lapply.opt == "future_lapply") {
       rf <- future.apply::future_lapply(future.packages = "rpart",
-                                        future.seed = T, future.stdout = NA,
+                                        future.seed = TRUE,
+                                        future.stdout = NA,
                                         X = idxS, FUN = function(idxt){
 
-                            sid <- sample(1:nrx, size = sampsize, replace = replace)
-                            x <- x[sid, ]
-                            if (!is.null(dim(y))) y[sid, ] else y <- y[sid]
-                            mc$data <- data.frame(y, x)
+                            if (resample) {
+                              sid <- sample(1:nrx, size = sampsize, replace = replace)
 
-                            tree <- eval(mc)
-                            mc <- NULL
-                            if (remove.leaf.info){
-                              tree$where <- NULL
-                              tree$y <- NULL
+                              if (oob.prunning){
+                                idxoob <- setdiff(1:nrx, sid)
+
+                                if (!is.null(dim(x))) xoob <- x[idxoob, ] else xoob <- x[idxoob]
+                                if (!is.null(dim(y))) yoob <- y[idxoob, ] else yoob <- y[idxoob]
+                              }
+
+                              if (!is.null(dim(x))) x <- x[sid, ] else x <- x[sid]
+                              if (!is.null(dim(y))) y <- y[sid, ] else y <- y[sid]
                             }
+
+                            if (oversample.binary){
+                              os <- oversample(y = y, x = x, printm = FALSE)
+
+                              y <- os$y
+                              x <- os$x
+                              os <- NULL
+                            }
+
+                            tree <-
+                              rpart( formula = y ~ x,
+                                     data = data.frame(y = I(y), x = I(x)),
+                                     mtry = mtry,
+                                     minsplit = minsplit,
+                                     minbucket = minbucket,
+                                     cp = cp,
+                                     maxdepth = maxdepth,
+                                     xval = 0,
+                                     method = method,
+                                     weights = weights,
+                                     parms = parms,
+                                     control = NULL,
+                                     x = keep.x,
+                                     y = keep.y
+                                     )
+
+                            if (resample && oob.prunning){
+                              tree <- pruneFromSample(tree, xoob, yoob, FALSE)
+                            }
+
+                            tree$where <- NULL
+                            tree$y <- NULL
 
                             p(message = sprintf("Tree %g/%g", idxt, ntree))
 
@@ -148,22 +170,53 @@ randomForestTrain <- function(x, y = NULL,
     } else if (lapply.opt == "lapply"){
       rf <- lapply(X = idxS, FUN = function(idxt){
 
-        sid <- sample(1:nrx, size = sampsize, replace = replace)
-        x <- x[sid, ]
-        if (!is.null(dim(y))) y[sid, ] else y <- y[sid]
-          mc$data <- data.frame(y, x)
+        if (resample) {
+          sid <- sample(1:nrx, size = sampsize, replace = replace)
 
-          tree <- eval(mc)
-          mc <- NULL
-          if (remove.leaf.info){
-            tree$where <- NULL
-            tree$y <- NULL
+          if (oob.prunning){
+            idxoob <- setdiff(1:nrx, sid)
+
+            if (!is.null(dim(x))) xoob <- x[idxoob, ] else xoob <- x[idxoob]
+            if (!is.null(dim(y))) yoob <- y[idxoob, ] else yoob <- y[idxoob]
           }
 
-          p(message = sprintf("Tree %g/%g", idxt, ntree))
+          if (!is.null(dim(x))) x <- x[sid, ] else x <- x[sid]
+          if (!is.null(dim(y))) y <- y[sid, ] else y <- y[sid]
+        }
 
-          return(tree)
-        })
+        if (oversample.binary){
+          os <- oversample(y = y, x = x, printm = FALSE)
+
+          y <- os$y
+          x <- os$x
+          os <- NULL
+        }
+
+        tree <-
+          rpart( formula = y ~ x,
+                 data = data.frame(y = I(y), x = I(x)),
+                 mtry = mtry,
+                 minsplit = minsplit,
+                 minbucket = minbucket,
+                 cp = cp,
+                 maxdepth = maxdepth,
+                 xval = 0,
+                 method = method,
+                 weights = weights,
+                 parms = parms,
+                 control = NULL,
+                 x = keep.x,
+                 y = keep.y
+          )
+
+        if (oob.prunning){
+          tree <- pruneFromSample(tree, xoob, yoob, FALSE)
+        }
+
+        p(message = sprintf("Tree %g/%g", idxt, ntree))
+
+        return(tree)
+      })
     } else {stop("Internal Error: lapply.opt not set")}
 
   })

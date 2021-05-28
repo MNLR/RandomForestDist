@@ -52,7 +52,7 @@ randomForestPredict <- function(model, newdata,
     newdata <- data.frame(newdata)
     names(newdata) <- "x"
   } else{
-    if (!is.data.frame(newdata)) newdata <- data.frame(newdata)
+    if (!is.data.frame(newdata)) newdata <- data.frame(x = I(newdata))
   }
 
   split.function <- model[[1]]$method
