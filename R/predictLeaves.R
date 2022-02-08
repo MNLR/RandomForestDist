@@ -126,7 +126,24 @@ predictLeaves <- function(model, newdata){
               sum((tbr[iinst, , ][1,])*(tbr[iinst, , ][2,]))/nn
              )
             })
+  } else if (attr(model, "multiresponse") == TRUE) {
+    prl <-
+      lapply(model, function(tr){
+        pr.leaves <- rpartPredictLeaves(tr,
+                                        newdata = newdata
+        )
+        pr.leaveselements <- lapply(pr.leaves,
+                                    function(ll){
+                                      tr$y[ which(ll == tr$where), ]
+                                    })
 
+        return( pr.leaveselements )
+      })
+
+    tbr <-
+      lapply(1:length(prl[[1]]), function(pidx){
+        do.call(rbind, lapply(prl, function(tr) tr[[pidx]] ))
+      })
   } else {
     prl <-
       lapply(model, function(tr){

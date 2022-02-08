@@ -55,16 +55,19 @@ randomForestTrain <- function(x, y = NULL,
                               method = NULL,
                               resample = TRUE,
                               replace = TRUE,
-                              sampsize = if (replace) nrow(x) else ceiling(.632*nrow(x)),
+                              sampsize = NULL,
                               oversample.binary = FALSE,
+                              undersample.binary = FALSE,
                               oob.prunning = FALSE,
+                              oob.prunning.function = NULL,
                               parallel.plan,
                               workers,
                               weights = NULL,
                               parms = NULL,
                               remove.leaf.info = FALSE,
                               keep.x = FALSE,
-                              keep.y = TRUE){
+                              keep.y = TRUE,
+                              progress.bar = TRUE){
 
 
 
@@ -102,6 +105,11 @@ randomForestTrain <- function(x, y = NULL,
   # mandatory, otherwise passed to rpart:
   cp <- -Inf  # RFs do not regularize - Ensures negative nll values don't conflict
   xval <- 0
+  if (is.null(sampsize)){
+    if (!undersample.binary){
+      if (replace) sampsize <- nrow(x) else sampsize <- ceiling(.632*nrow(x))
+    }
+  }
 
 
   if (is.null(dim(x))) x <- matrix(x, nrow = length(x))
@@ -109,7 +117,7 @@ randomForestTrain <- function(x, y = NULL,
 
 
   idxS <- 1:ntree
-  with_progress({
+  with_progress(enable = progress.bar, expr = {
     p <- progressor(along = idxS)
     if (lapply.opt == "future_lapply") {
       rf <- future.apply::future_lapply(future.packages = "rpart",
@@ -129,14 +137,21 @@ randomForestTrain <- function(x, y = NULL,
 
                               if (!is.null(dim(x))) x <- x[sid, ] else x <- x[sid]
                               if (!is.null(dim(y))) y <- y[sid, ] else y <- y[sid]
-                            }
-
-                            if (oversample.binary){
+                            } else if (oversample.binary){
                               os <- oversample(y = y, x = x, printm = FALSE)
 
                               y <- os$y
                               x <- os$x
                               os <- NULL
+                            } else if (undersample.binary){
+                              us <- undersampleBinary(y = y, x = x,
+                                                      size = sampsize,
+                                                      replace = replace,
+                                                       print.info = T)
+
+                              y <- us$IS$y
+                              x <- us$IS$x
+                              us <- NULL
                             }
 
                             tree <-
@@ -157,11 +172,10 @@ randomForestTrain <- function(x, y = NULL,
                                      )
 
                             if (resample && oob.prunning){
-                              tree <- pruneFromSample(tree, xoob, yoob, FALSE)
+                              tree <- pruneFromSample(tr = tree, x = xoob, y = yoob,
+                                        oob.prunning.function = oob.prunning.function,
+                                                      plot.tree.sequence = FALSE)
                             }
-
-                            tree$where <- NULL
-                            tree$y <- NULL
 
                             p(message = sprintf("Tree %g/%g", idxt, ntree))
 
@@ -182,14 +196,21 @@ randomForestTrain <- function(x, y = NULL,
 
           if (!is.null(dim(x))) x <- x[sid, ] else x <- x[sid]
           if (!is.null(dim(y))) y <- y[sid, ] else y <- y[sid]
-        }
-
-        if (oversample.binary){
+        } else if (oversample.binary){
           os <- oversample(y = y, x = x, printm = FALSE)
 
           y <- os$y
           x <- os$x
           os <- NULL
+        } else if (undersample.binary){
+          us <- undersampleBinary(y = y, x = x,
+                                         size = sampsize,
+                                         replace = replace,
+                                         print.info = T)
+
+          y <- us$IS$y
+          x <- us$IS$x
+          us <- NULL
         }
 
         tree <-
@@ -210,7 +231,9 @@ randomForestTrain <- function(x, y = NULL,
           )
 
         if (oob.prunning){
-          tree <- pruneFromSample(tree, xoob, yoob, FALSE)
+          tree <- pruneFromSample(tr = tree, x = xoob, y = yoob,
+                                  oob.prunning.function = oob.prunning.function,
+                                  plot.tree.sequence = FALSE)
         }
 
         p(message = sprintf("Tree %g/%g", idxt, ntree))
@@ -220,6 +243,16 @@ randomForestTrain <- function(x, y = NULL,
     } else {stop("Internal Error: lapply.opt not set")}
 
   })
+
+  if (    method =="binaryCrossEntropyMultivar"
+       || method == "binaryCrossEntropyMultivarCorPenalization"
+       || method == "binaryMultiEntropy"
+       || method == "binaryMultiEntropyCond"
+       || method == "multiBinaryGammaEntropy"){
+    attr(rf, "multiresponse") = TRUE
+  } else {
+    attr(rf, "multiresponse") = FALSE
+  }
 
   class(rf) <- "RandomForestDist"
 

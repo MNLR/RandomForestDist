@@ -13,14 +13,22 @@ randomForestTrain(
   minsplit = if (!is.null(y) && !is.factor(y)) 5 else 1,
   minbucket = minsplit/3,
   maxdepth = 30,
-  method,
+  method = NULL,
+  resample = TRUE,
   replace = TRUE,
-  sampsize = if (replace) nrow(x) else ceiling(0.632 * nrow(x)),
+  sampsize = NULL,
+  oversample.binary = FALSE,
+  undersample.binary = FALSE,
+  oob.prunning = FALSE,
+  oob.prunning.function = NULL,
   parallel.plan,
   workers,
-  weights,
-  parms,
-  remove.leaf.info = FALSE
+  weights = NULL,
+  parms = NULL,
+  remove.leaf.info = FALSE,
+  keep.x = FALSE,
+  keep.y = TRUE,
+  progress.bar = TRUE
 )
 }
 \arguments{
@@ -52,10 +60,13 @@ bernoulli-gamma log likelihood; \code{"gammaDeviation"} for the deviation of the
 2-parameter gamma distribution; \code{"bernoulliLL"} for the bernoulli
 log-likelihood (expects class \code{numeric} with \code{0,1}).}
 
-\item{replace}{Either \code{TRUE} or \code{FALSE}. Should samples of \code{x} be
+\item{resample}{Either \code{TRUE} or \code{FALSE}. Should resampling of \code{x, y} be
+done?}
+
+\item{replace}{Either \code{TRUE} or \code{FALSE}. Should samples of \code{x,y} be
 drawn with replacement?}
 
-\item{sampsize}{Size of the samples of \code{x}}
+\item{sampsize}{Size of the samples of \code{x,y}}
 
 \item{parallel.plan}{Controls parallel execution, which is handled by and requires the
 package \code{future.apply}. If this package is not installed parallel execution will
@@ -72,9 +83,10 @@ In any other case this parameter corresponds to
 
 \item{parms}{\code{parms} as pased to \code{rpart::rpart()}.}
 
-\item{remove.leaf.info}{Reduces the memory usage of the trees. This should not be
-set to \code{TRUE} unless there are memory issues. NOTE: Setting this to \code{TRUE}
-makes a posteriori estimation not available.}
+\item{keep.x}{Keeps a copy of the training set x for each tree. Default to FALSE, reduces
+the memory usage.
+#' @param keep.x Keeps a copy of the training set y for each tree. Default to TRUE.
+NOTE: Setting this to \code{FALSE} disables a posteriori estimation.}
 }
 \description{
 Train a random forest for predictors \code{x} and predictands \code{y}.

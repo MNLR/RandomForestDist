@@ -4,7 +4,7 @@
 \alias{randomForestSimulate}
 \title{Simulate stochastic series with the Random Forest model predictions.}
 \usage{
-randomForestSimulate(prediction, n = 1, distr)
+randomForestSimulate(prediction, n = 1, distr, simplify.multivariable = TRUE)
 }
 \arguments{
 \item{prediction}{A prediction object, as output by \code{.randomForestPredict()}.

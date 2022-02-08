@@ -10,14 +10,50 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// estimateGammaBC3
-NumericVector estimateGammaBC3(NumericVector y);
-RcppExport SEXP _RandomForestDist_estimateGammaBC3(SEXP ySEXP) {
+// computeBinaryMultiEntropyConditional
+NumericVector computeBinaryMultiEntropyConditional(NumericMatrix appr, int non_informative_threshold);
+RcppExport SEXP _RandomForestDist_computeBinaryMultiEntropyConditional(SEXP apprSEXP, SEXP non_informative_thresholdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type appr(apprSEXP);
+    Rcpp::traits::input_parameter< int >::type non_informative_threshold(non_informative_thresholdSEXP);
+    rcpp_result_gen = Rcpp::wrap(computeBinaryMultiEntropyConditional(appr, non_informative_threshold));
+    return rcpp_result_gen;
+END_RCPP
+}
+// computeBinaryMultiEntropyFrequencies
+NumericVector computeBinaryMultiEntropyFrequencies(NumericMatrix appr);
+RcppExport SEXP _RandomForestDist_computeBinaryMultiEntropyFrequencies(SEXP apprSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type appr(apprSEXP);
+    rcpp_result_gen = Rcpp::wrap(computeBinaryMultiEntropyFrequencies(appr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// estimateBernoulliGammabc3
+NumericVector estimateBernoulliGammabc3(NumericVector y, double non_informative_beta);
+RcppExport SEXP _RandomForestDist_estimateBernoulliGammabc3(SEXP ySEXP, SEXP non_informative_betaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
-    rcpp_result_gen = Rcpp::wrap(estimateGammaBC3(y));
+    Rcpp::traits::input_parameter< double >::type non_informative_beta(non_informative_betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(estimateBernoulliGammabc3(y, non_informative_beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// estimateGammaBC3
+NumericVector estimateGammaBC3(NumericVector y, double non_informative_beta);
+RcppExport SEXP _RandomForestDist_estimateGammaBC3(SEXP ySEXP, SEXP non_informative_betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< double >::type non_informative_beta(non_informative_betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(estimateGammaBC3(y, non_informative_beta));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -36,7 +72,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_RandomForestDist_estimateGammaBC3", (DL_FUNC) &_RandomForestDist_estimateGammaBC3, 1},
+    {"_RandomForestDist_computeBinaryMultiEntropyConditional", (DL_FUNC) &_RandomForestDist_computeBinaryMultiEntropyConditional, 2},
+    {"_RandomForestDist_computeBinaryMultiEntropyFrequencies", (DL_FUNC) &_RandomForestDist_computeBinaryMultiEntropyFrequencies, 1},
+    {"_RandomForestDist_estimateBernoulliGammabc3", (DL_FUNC) &_RandomForestDist_estimateBernoulliGammabc3, 2},
+    {"_RandomForestDist_estimateGammaBC3", (DL_FUNC) &_RandomForestDist_estimateGammaBC3, 2},
     {"_RandomForestDist_simulateDist", (DL_FUNC) &_RandomForestDist_simulateDist, 3},
     {NULL, NULL, 0}
 };

@@ -37,25 +37,28 @@
 #' to \code{fitdistrplus::fitdist()}
 
 
-randomForestPredict <- function(model, newdata,
+randomForestPredict <- function(model,
+                                newdata,
                                 method = NULL,
                                 bagging.function = mean,
                                 distr = NULL,
                                 simplify.estimation = TRUE,
+                                non.informative.threshold = 0,
+                                non.informative.p = 0.5,
+                                marginal.imaginary.samplesize = 1,
                                 ...){
 
-  if (model[[1]]$method == "class") prediction.type = "prob"
+  split.function <- model[[1]]$method
+
+  if (split.function == "class") prediction.type = "prob"
   else prediction.type <- "matrix"
 
   if (is.null(dim(newdata))){
-    newdata <- matrix(newdata, nrow = length(newdata))
-    newdata <- data.frame(newdata)
-    names(newdata) <- "x"
+    newdata <- data.frame(x = as.vector(newdata))
   } else{
-    if (!is.data.frame(newdata)) newdata <- data.frame(x = I(newdata))
+    if (!is.data.frame(newdata)) newdata <- data.frame(x = I(unname(newdata)))
   }
 
-  split.function <- model[[1]]$method
 
   if (is.null(method)){
     tbr <- simplify2array(lapply(model,
@@ -68,6 +71,10 @@ randomForestPredict <- function(model, newdata,
       tbr <- apply(X = tbr,
                    MARGIN = seq(1, length(dim(tbr))-1),
                    FUN = bagging.function, ... = ...)
+
+      if (split.function == "binaryMultiEntropyCond"){
+        colnames(tbr) <- getBinaryMultiEntropyCondColnames(model[[1]]$parms)
+      }
     }
   } else {
     if (is.na(method) || method == "leaves") tbr <- predictLeaves(model, newdata)
@@ -78,7 +85,9 @@ randomForestPredict <- function(model, newdata,
                                    split.function = split.function,
                                    distr = distr,
                                    simplify.estimation = simplify.estimation,
-                                   ... = ...)
+                                non.informative.threshold = non.informative.threshold,
+                                non.informative.p = non.informative.p,
+                      marginal.imaginary.samplesize = marginal.imaginary.samplesize)
     }
   }
 
@@ -86,7 +95,7 @@ randomForestPredict <- function(model, newdata,
 
   class(tbr) <- "RandomForestDist.prediction"
   if ( isSimulable(method, split.function) ){
-        class(tbr) <- "RandomForestDist.prediction.simulable"
+    class(tbr) <- "RandomForestDist.prediction.simulable"
   }
 
   return(tbr)
@@ -94,7 +103,12 @@ randomForestPredict <- function(model, newdata,
 
 
 isSimulable <- function(method, split.function){
-  if (split.function == "class"){
+  if (split.function == "binaryMultiEntropyCond"){
+    condition_ <- is.null(method) || (
+      !is.na(method) && (method != "leaves" && method != "random.sample")
+    )
+  }
+  else if (split.function == "class"){
     condition_ <- is.null(method) || (
                     !is.na(method) && (method != "leaves" && method != "random.sample")
                   )

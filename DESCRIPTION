@@ -12,7 +12,8 @@ Depends: R (>= 3.5.0),
          progressr
 Imports: Rcpp (>= 1.0.5),
          qmap,
-         fitdistrplus
+         fitdistrplus,
+         ROCR
 Suggests: future.apply
 LinkingTo: Rcpp
 RoxygenNote: 7.1.1

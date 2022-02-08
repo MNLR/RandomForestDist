@@ -12,14 +12,23 @@
 #'  the gamma distribution, \code{"gamma"}; and the exponential distribution, \code{"exp"}.
 
 
-randomForestSimulate <- function(prediction, n = 1, distr){
+randomForestSimulate <- function(prediction, n = 1, distr, simplify.multivariable = TRUE){
   if (class(prediction) != "RandomForestDist.prediction.simulable")
     stop("Expects an object of type RandomForestDist.prediction.simulable")
 
   if (missing(distr) || is.null(distr))
     distr <- guessDistribution(attr(prediction, "split.function"))
 
-  simulations <- .Call(`_RandomForestDist_simulateDist`, n, prediction, distr)
+  if (distr == "conditionalBernoulli"){
+    simulations <- lapply(seq(from = 1, to = n, by = 1),
+                          function(nsim){
+                            .Call(`_RandomForestDist_simulateDist`, -1, prediction, distr)
+                          } )
+
+    if (simplify.multivariable) simulations <- simplify2array(simulations)
+  } else{
+    simulations <- .Call(`_RandomForestDist_simulateDist`, n, prediction, distr)
+  }
 
   if (distr == "categorical") simulations <- renameClasses(simulations,
                                                            colnames(prediction))

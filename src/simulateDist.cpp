@@ -6,7 +6,8 @@ using namespace Rcpp;
 NumericMatrix simulateDist(int n, NumericMatrix prediction, String distribution) {
 
   checkConsistency(prediction, distribution);
-  NumericMatrix simulations(prediction.nrow(), n);
+
+  NumericMatrix simulations;
 
   switch(distribution_codes[distribution]) {
     case 0:
@@ -23,6 +24,10 @@ NumericMatrix simulateDist(int n, NumericMatrix prediction, String distribution)
 
     case 3:
       simulations = simulateExponential(n, prediction);
+      break;
+
+    case 4:
+      simulations = simulateOneConditionalBernoulli(prediction);
       break;
 
     default:

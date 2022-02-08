@@ -11,6 +11,9 @@ randomForestPredict(
   bagging.function = mean,
   distr = NULL,
   simplify.estimation = TRUE,
+  non.informative.threshold = 0,
+  non.informative.p = 0.5,
+  marginal.imaginary.samplesize = 1,
   ...
 )
 }

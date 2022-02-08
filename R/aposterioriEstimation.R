@@ -3,20 +3,53 @@
 
 aposterioriEstimation <- function(model, newdata, method, split.function, distr = NULL,
                                   simplify.estimation = TRUE,
-                                  ... = ...){
+                                  non.informative.threshold = 0,
+                                  non.informative.p = 0.5,
+                                  marginal.imaginary.samplesize = 1
+                                  ){
 
   if (method == "random.sample"){
     prl <- predictLeaves(model, newdata)
-    tbr <- sapply(prl, FUN = sample, size = 1)
+    if (method == "binaryMultiEntropyCond"){
+      tbr <- do.call(rbind,
+                     lapply(prl, FUN = function(pp){
+                       pp[sample(1:nrow(pp), size = 1), ]
+                     })
+      )
+    } else {
+      tbr <- sapply(prl, FUN = sample, size = 1)
+    }
   } else {
 
     if (method == "aposteriori") method <- "mme"
     idxS <- 1:nrow(newdata)
-    if (split.function == "bernoulliGammaLLMME"){
 
+    if (split.function == "binaryMultiEntropyCond"){
       prl <- predictLeaves(model, newdata)
-      tbr <- t(sapply(prl, FUN = function(ll) unlist(startberngamma(ll))))
+      tbr <- aposterioriBinaryMultiEntropiCond(prl, method,
+                                non.informative.threshold = non.informative.threshold,
+                                non.informative.p = non.informative.p,
+                      marginal.imaginary.samplesize = marginal.imaginary.samplesize)
 
+    } else if (split.function == "bernoulliGammaLLMME" ||
+               split.function == "binaryCrossEntropyGammaDeviation"){
+      # generally speaking this needs to be done sample-by-sample
+      # since predictive sample sizes tend to be big
+
+      if (method == "mme" || method == "bc3"){ ## mme is currently deactivated
+        tbr <-
+          do.call(rbind,
+                  lapply(1:nrow(newdata), function(indl){
+                    return(
+                      .Call(`_RandomForestDist_estimateBernoulliGammabc3`,
+                            randomForestPredict(model,
+                                                newdata = newdata[indl, , drop = F],
+                                                method = "leaves")[[1]],
+                            1)
+                    )
+                  })
+          )
+      } else {stop("Invalid method")}
     } else if (split.function == "class"){
       tbr <- t(
               apply(predictLeaves(model, newdata),
@@ -37,7 +70,13 @@ aposterioriEstimation <- function(model, newdata, method, split.function, distr 
           })
       } else {
         if (distr != "gamma") stop("bc3 estimators are for the gamma distribution")
-        tbr <- estimateBC3(prl)
+        tbr <-
+          estimateLeavesBC3(
+            leaves.info = randomForestPredict(model,
+                                              method = "leaves",
+                                              newdata = newdata),
+            noninformative.beta = 1
+          )
         simplify.estimation <- FALSE
       }
       if (simplify.estimation){
