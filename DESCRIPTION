@@ -14,6 +14,6 @@ Imports: Rcpp (>= 1.0.5),
          qmap,
          fitdistrplus,
          ROCR
-Suggests: future.apply
+Suggests: future.apply (>= 1.8.1)
 LinkingTo: Rcpp
 RoxygenNote: 7.1.1
