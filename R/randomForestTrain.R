@@ -248,6 +248,7 @@ randomForestTrain <- function(x, y = NULL,
        || method == "binaryCrossEntropyMultivarCorPenalization"
        || method == "binaryMultiEntropy"
        || method == "binaryMultiEntropyCond"
+       || method == "binaryMargEntropyCond"
        || method == "multiBinaryGammaEntropy"){
     attr(rf, "multiresponse") = TRUE
   } else {

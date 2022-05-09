@@ -13,7 +13,7 @@ NumericMatrix simulateOneConditionalBernoulli(NumericMatrix prediction) {
   }
   NumericMatrix simulations(prediction.nrow(), nresponses);
 
-  NumericVector valnames = NumericVector::create(0,1);
+  NumericVector valnames = NumericVector::create(0, 1);
 
 
    for (int i = 0; i < prediction.nrow(); i++){
@@ -24,11 +24,11 @@ NumericMatrix simulateOneConditionalBernoulli(NumericMatrix prediction) {
      // for nresp = rest:
     idxbasecond = 0;
     for (int nresp = 1; nresp < nresponses; nresp++){
-      idxbasecond += ( pow(2, nresp-1) );
+      idxbasecond += ( pow(2, nresp - 1) );
       idxcond = 0;
 
       for (int ncond = 0; ncond < nresp; ncond++){
-        idxcond += (int)(simulations(i,ncond)*( pow(2, ncond)));
+        idxcond += (int)(simulations(i,ncond)*( pow(2, ncond)) );
       }
 
       simulations(i,nresp) = sample(valnames, 1, true,

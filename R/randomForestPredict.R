@@ -72,7 +72,8 @@ randomForestPredict <- function(model,
                    MARGIN = seq(1, length(dim(tbr))-1),
                    FUN = bagging.function, ... = ...)
 
-      if (split.function == "binaryMultiEntropyCond"){
+      if (split.function == "binaryMultiEntropyCond" ||
+          split.function == "binaryMargEntropyCond"){
         colnames(tbr) <- getBinaryMultiEntropyCondColnames(model[[1]]$parms)
       }
     }
@@ -103,7 +104,8 @@ randomForestPredict <- function(model,
 
 
 isSimulable <- function(method, split.function){
-  if (split.function == "binaryMultiEntropyCond"){
+  if (split.function == "binaryMultiEntropyCond" ||
+      split.function == "binaryMargEntropyCond"){
     condition_ <- is.null(method) || (
       !is.na(method) && (method != "leaves" && method != "random.sample")
     )

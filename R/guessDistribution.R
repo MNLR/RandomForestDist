@@ -9,6 +9,7 @@ guessDistribution <- function(split.function, prediction){
               anova = {"norm"},
               class = {"categorical"},
               binaryMultiEntropyCond = {"conditionalBernoulli"},
+              binaryMargEntropyCond = {"conditionalBernoulli"},
               {stop("Method not found and cannot infer distribution")}
           )
 

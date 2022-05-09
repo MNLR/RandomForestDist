@@ -10,7 +10,8 @@ aposterioriEstimation <- function(model, newdata, method, split.function, distr 
 
   if (method == "random.sample"){
     prl <- predictLeaves(model, newdata)
-    if (method == "binaryMultiEntropyCond"){
+    if (method == "binaryMultiEntropyCond" ||
+        method == "binaryMargEntropyCond"){
       tbr <- do.call(rbind,
                      lapply(prl, FUN = function(pp){
                        pp[sample(1:nrow(pp), size = 1), ]
@@ -24,7 +25,8 @@ aposterioriEstimation <- function(model, newdata, method, split.function, distr 
     if (method == "aposteriori") method <- "mme"
     idxS <- 1:nrow(newdata)
 
-    if (split.function == "binaryMultiEntropyCond"){
+    if (split.function == "binaryMultiEntropyCond" ||
+        split.function == "binaryMargEntropyCond"){
       prl <- predictLeaves(model, newdata)
       tbr <- aposterioriBinaryMultiEntropiCond(prl, method,
                                 non.informative.threshold = non.informative.threshold,
