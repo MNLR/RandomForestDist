@@ -21,12 +21,12 @@ aposterioriEstimation <- function(model, newdata, method, split.function, distr 
       tbr <- sapply(prl, FUN = sample, size = 1)
     }
   } else {
-
-    if (method == "aposteriori") method <- "mme"
     idxS <- 1:nrow(newdata)
 
     if (split.function == "binaryMultiEntropyCond" ||
         split.function == "binaryMargEntropyCond"){
+      if (method == "aposteriori") method <- "mme"
+
       prl <- predictLeaves(model, newdata)
       tbr <- aposterioriBinaryMultiEntropiCond(prl, method,
                                 non.informative.threshold = non.informative.threshold,
@@ -35,6 +35,8 @@ aposterioriEstimation <- function(model, newdata, method, split.function, distr 
 
     } else if (split.function == "bernoulliGammaLLMME" ||
                split.function == "binaryCrossEntropyGammaDeviation"){
+
+      if (method == "aposteriori") method <- "mme"
       # generally speaking this needs to be done sample-by-sample
       # since predictive sample sizes tend to be big
 
@@ -52,15 +54,51 @@ aposterioriEstimation <- function(model, newdata, method, split.function, distr 
                   })
           )
       } else {stop("Invalid method")}
+    } else if (split.function == "MSEbinaryEntropyGammaDeviance"){
+      if (method == "aposteriori"){ method <- "mme.bc3" }
+
+      aux <- randomForestPredict(model,
+                                 newdata = newdata,
+                                 method = "leaves")
+
+      method <- strsplit(x = method, split = ".", fixed = T)[[1]]
+
+      tbr <-
+        do.call(rbind,
+                lapply(aux, FUN = function(ll) fitdist(data = ll[,1],
+                                                       distr = "norm",
+                                                       method = method[1])$estimate)
+        )
+
+      if (method[2] == "mme" || method[2] == "bc3"){ ## mme is currently deactivated
+        tbr <-
+          cbind(tbr,
+                do.call(rbind,
+                        lapply(aux, function(ll){
+                          return(
+                            .Call(`_RandomForestDist_estimateBernoulliGammabc3`,
+                                  ll[,2],
+                                  1)
+                          )
+                        })
+                )
+          )
+      } else { stop("Invalid method") }
     } else if (split.function == "class"){
+      if (method == "aposteriori") method <- "mme"
+
       tbr <- t(
               apply(predictLeaves(model, newdata),
                     MARGIN = 1,
                     FUN = function(ll) ll/sum(ll))
               )
     } else if (split.function == "bernoulliLL"){
+      if (method == "aposteriori") method <- "mme"
+
       tbr <- predictLeaves(model, newdata)
     } else {
+      if (method == "aposteriori") method <- "mme"
+
       if (is.null(distr)) distr <- guessDistribution(split.function)
 
       prl <- predictLeaves(model, newdata)

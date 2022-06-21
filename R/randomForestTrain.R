@@ -105,16 +105,16 @@ randomForestTrain <- function(x, y = NULL,
   # mandatory, otherwise passed to rpart:
   cp <- -Inf  # RFs do not regularize - Ensures negative nll values don't conflict
   xval <- 0
+
+  if (is.null(dim(x))) x <- matrix(x, nrow = length(x))
+
   if (is.null(sampsize)){
     if (!undersample.binary){
       if (replace) sampsize <- nrow(x) else sampsize <- ceiling(.632*nrow(x))
     }
   }
 
-
-  if (is.null(dim(x))) x <- matrix(x, nrow = length(x))
   nrx <- nrow(x)
-
 
   idxS <- 1:ntree
   with_progress(enable = progress.bar, expr = {
@@ -135,8 +135,8 @@ randomForestTrain <- function(x, y = NULL,
                                 if (!is.null(dim(y))) yoob <- y[idxoob, ] else yoob <- y[idxoob]
                               }
 
-                              if (!is.null(dim(x))) x <- x[sid, ] else x <- x[sid]
-                              if (!is.null(dim(y))) y <- y[sid, ] else y <- y[sid]
+                              if (!is.null(dim(x))) x <- x[sid, , drop = FALSE] else x <- x[sid , drop = FALSE]
+                              if (!is.null(dim(y))) y <- y[sid, , drop = FALSE] else y <- y[sid , drop = FALSE]
                             } else if (oversample.binary){
                               os <- oversample(y = y, x = x, printm = FALSE)
 
@@ -249,7 +249,9 @@ randomForestTrain <- function(x, y = NULL,
        || method == "binaryMultiEntropy"
        || method == "binaryMultiEntropyCond"
        || method == "binaryMargEntropyCond"
-       || method == "multiBinaryGammaEntropy"){
+       || method == "multiBinaryGammaEntropy"
+       || method == "MSEgammaDeviance"
+       || method == "MSEbinaryEntropyGammaDeviance"){
     attr(rf, "multiresponse") = TRUE
   } else {
     attr(rf, "multiresponse") = FALSE
