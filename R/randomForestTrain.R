@@ -122,7 +122,7 @@ randomForestTrain <- function(x, y = NULL,
     if (lapply.opt == "future_lapply") {
       rf <- future.apply::future_lapply(future.packages = "rpart",
                                         future.seed = TRUE,
-                                        future.stdout = NA,
+                                        future.stdout = FALSE,
                                         X = idxS, FUN = function(idxt){
 
                             if (resample) {
@@ -178,7 +178,7 @@ randomForestTrain <- function(x, y = NULL,
                             }
 
                             p(message = sprintf("Tree %g/%g", idxt, ntree))
-
+                            gc()
                             return(tree)
                           })
     } else if (lapply.opt == "lapply"){

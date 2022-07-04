@@ -46,6 +46,7 @@ randomForestPredict <- function(model,
                                 non.informative.threshold = 0,
                                 non.informative.p = 0.5,
                                 marginal.imaginary.samplesize = 1,
+                                also.return.x = FALSE,
                                 ...){
 
   split.function <- model[[1]]$method
@@ -78,7 +79,7 @@ randomForestPredict <- function(model,
       }
     }
   } else {
-    if (is.na(method) || method == "leaves") tbr <- predictLeaves(model, newdata)
+    if (is.na(method) || method == "leaves") tbr <- predictLeaves(model, newdata, also.return.x)
     else {
       tbr <- aposterioriEstimation(model = model,
                                    newdata = newdata,

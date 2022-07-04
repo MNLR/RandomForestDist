@@ -88,7 +88,11 @@ rpartPredictLeaves <- function(rp, newdata){
 
 
 
-predictLeaves <- function(model, newdata){
+predictLeaves <- function(model, newdata, also.return.x = FALSE){
+  if (also.return.x){
+    if (is.null(model[[1]]$x)) stop("x was requested but model was trained with keep.x = FALSE")
+  }
+
   y.original <- model[[1]]$call$data$y
 
   if (class(y.original) == "factor"){
@@ -129,12 +133,22 @@ predictLeaves <- function(model, newdata){
   } else if (attr(model, "multiresponse") == TRUE) {
     prl <-
       lapply(model, function(tr){
-        pr.leaves <- rpartPredictLeaves(tr,
-                                        newdata = newdata
-        )
+        pr.leaves <- rpartPredictLeaves(tr, newdata = newdata)
+
         pr.leaveselements <- lapply(pr.leaves,
                                     function(ll){
-                                      tr$y[ which(ll == tr$where), ]
+                                      if (also.return.x){
+                                        return(
+                                          cbind(
+                                           tr$x[ which(ll == tr$where), , drop = FALSE],
+                                           tr$y[ which(ll == tr$where), , drop = FALSE]
+                                           )
+                                        )
+                                      } else {
+                                        return(
+                                          tr$y[ which(ll == tr$where), ]
+                                        )
+                                      }
                                     })
 
         return( pr.leaveselements )
