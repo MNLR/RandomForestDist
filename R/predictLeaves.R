@@ -161,17 +161,38 @@ predictLeaves <- function(model, newdata, also.return.x = FALSE){
   } else {
     prl <-
       lapply(model, function(tr){
-        pr.leaves <- rpartPredictLeaves(tr,
-                                        newdata = newdata
-                                        )
+        pr.leaves <- rpartPredictLeaves(tr, newdata = newdata)
         pr.leaveselements <- lapply(pr.leaves,
                                     function(ll){
-                                      tr$y[which(ll == tr$where)]
+
+                                      if (also.return.x){
+                                        return(
+                                          cbind(
+                                            tr$x[ which(ll == tr$where), , drop = FALSE],
+                                            tr$y[ which(ll == tr$where) ]
+                                          )
+                                        )
+                                      } else {
+                                        return(
+                                          tr$y[which(ll == tr$where)]
+                                        )
+                                      }
                                     })
 
         return( pr.leaveselements )
       })
 
+    if (also.return.x){
+      tbr <-
+        lapply(1:length(prl[[1]]),
+               function(ix) {
+                 do.call(rbind, lapply(prl, function(tr){
+                   return(tr[[ix]])
+                 })
+                 )
+               })
+
+    }else{
     tbr <-
       lapply(1:length(prl[[1]]),
              function(ix) {
@@ -180,6 +201,7 @@ predictLeaves <- function(model, newdata, also.return.x = FALSE){
                })
                )
              })
+    }
   }
 
   return(tbr)
