@@ -1,13 +1,8 @@
-#' @importFrom ROCR performance prediction
-
-## experimental,
-## Not all Split functions are implemented!
-
-# FOR PRUNNING FUNCTIONS HIGHER IS BETTER!!!!
 
 guessPrunningFunction <- function(split.function){
   distr <-
     switch(split.function,
+           anova = {mse},
            bernoulliGammaLLMME = {binCrossEntropylogMae},
            binaryCrossEntropyGammaDeviation = {binCrossEntropylogMae},
            multiBinaryGammaEntropy = {binCrossEntropylogMae},
@@ -30,10 +25,22 @@ binaryEntropyMulti <- function(tr, x, obs){
       unlist(
         performance(prediction(pred[, icol], obs[, icol]),"auc")@y.values
       )
-      })
+    })
 
   return(mean(auc))
 }
+
+
+
+mse <- function(tr, x, obs){
+  fakerf <- list(tr)
+  attr(fakerf, "multiresponse") <- FALSE
+
+  pred <- randomForestPredict(fakerf, x, method = "aposteriori")[,1]
+  return(mean( (pred-obs)^2 ))
+}
+
+
 
 pruneFromSample <- function(tr, x, y,
                             oob.prunning.function = NULL,
