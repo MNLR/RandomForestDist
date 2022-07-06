@@ -131,8 +131,8 @@ randomForestTrain <- function(x, y = NULL,
                               if (oob.prunning){
                                 idxoob <- setdiff(1:nrx, sid)
 
-                                if (!is.null(dim(x))) xoob <- x[idxoob, ] else xoob <- x[idxoob]
-                                if (!is.null(dim(y))) yoob <- y[idxoob, ] else yoob <- y[idxoob]
+                                if (!is.null(dim(x))) xoob <- x[idxoob, , drop = FALSE ] else xoob <- x[idxoob, drop = FALSE]
+                                if (!is.null(dim(y))) yoob <- y[idxoob, , drop = FALSE] else yoob <- y[idxoob, drop = FALSE]
                               }
 
                               if (!is.null(dim(x))) x <- x[sid, , drop = FALSE] else x <- x[sid , drop = FALSE]
@@ -190,12 +190,12 @@ randomForestTrain <- function(x, y = NULL,
           if (oob.prunning){
             idxoob <- setdiff(1:nrx, sid)
 
-            if (!is.null(dim(x))) xoob <- x[idxoob, ] else xoob <- x[idxoob]
-            if (!is.null(dim(y))) yoob <- y[idxoob, ] else yoob <- y[idxoob]
+            if (!is.null(dim(x))) xoob <- x[idxoob, , drop = FALSE ] else xoob <- x[idxoob, drop = FALSE ]
+            if (!is.null(dim(y))) yoob <- y[idxoob, , drop = FALSE ] else yoob <- y[idxoob, drop = FALSE ]
           }
 
-          if (!is.null(dim(x))) x <- x[sid, ] else x <- x[sid]
-          if (!is.null(dim(y))) y <- y[sid, ] else y <- y[sid]
+          if (!is.null(dim(x))) x <- x[sid, , drop = FALSE ] else x <- x[sid, drop = FALSE ]
+          if (!is.null(dim(y))) y <- y[sid, , drop = FALSE ] else y <- y[sid, drop = FALSE ]
         } else if (oversample.binary){
           os <- oversample(y = y, x = x, printm = FALSE)
 
