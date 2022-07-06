@@ -38,7 +38,7 @@ mse <- function(tr, x, obs){
 
 
   pred <- randomForestPredict(fakerf, x, bagging.function = mean)
-  return(mean( (pred-obs)^2 ))
+  return(-mean( (pred-obs)^2 ))
 }
 
 
