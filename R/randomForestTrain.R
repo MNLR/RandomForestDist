@@ -177,6 +177,10 @@ randomForestTrain <- function(x, y = NULL,
                                                       plot.tree.sequence = FALSE)
                             }
 
+                            if (resample){
+                              attr(tree, "resample.indices") <- sid
+                            }
+
                             p(message = sprintf("Tree %g/%g", idxt, ntree))
                             gc()
                             return(tree)
@@ -236,7 +240,13 @@ randomForestTrain <- function(x, y = NULL,
                                   plot.tree.sequence = FALSE)
         }
 
+        if (resample){
+          attr(tree, "resample.indices") <- sid
+        }
+
         p(message = sprintf("Tree %g/%g", idxt, ntree))
+
+
 
         return(tree)
       })
@@ -256,6 +266,8 @@ randomForestTrain <- function(x, y = NULL,
   } else {
     attr(rf, "multiresponse") = FALSE
   }
+
+
 
   class(rf) <- "RandomForestDist"
 
