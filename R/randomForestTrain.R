@@ -41,8 +41,11 @@
 #' @param parms \code{parms} as pased to \code{rpart::rpart()}.
 #' @param keep.x Keeps a copy of the training set x for each tree. Default to FALSE, reduces
 #' the memory usage.
-#' #' @param keep.x Keeps a copy of the training set y for each tree. Default to TRUE.
+#' @param keep.y Keeps a copy of the training set y for each tree. Default to TRUE.
 #' NOTE: Setting this to \code{FALSE} disables a posteriori estimation.
+#' @param ignore.y.indices A vector, used to ignore certain columns during the training
+#' stage. Usefull to use it a posteriori. Default to NULL: nothing will be ignored.
+
 
 randomForestTrain <- function(x, y = NULL,
                               ntree = 100,
@@ -67,6 +70,7 @@ randomForestTrain <- function(x, y = NULL,
                               remove.leaf.info = FALSE,
                               keep.x = FALSE,
                               keep.y = TRUE,
+                              ignore.y.indices = NULL,
                               progress.bar = TRUE){
 
 
@@ -98,6 +102,10 @@ randomForestTrain <- function(x, y = NULL,
     lapply.opt <- "lapply"
   }
 
+  if (!is.null(ignore.y.indices)){
+    y.complete <- y
+    y <- y[,-ignore.y.indices, drop = FALSE]
+  }
 
   stopifnot(sum(is.na(y)) == 0)
   stopifnot(sum(is.na(x)) == 0)
@@ -179,6 +187,13 @@ randomForestTrain <- function(x, y = NULL,
 
                             if (resample){
                               attr(tree, "resample.indices") <- sid
+                              if (!is.null(ignore.y.indices)){
+                                tree$y <- y.complete[sid,]
+                              }
+                            } else {
+                              if (!is.null(ignore.y.indices)){
+                                tree$y <- y.complete
+                              }
                             }
 
                             p(message = sprintf("Tree %g/%g", idxt, ntree))
@@ -242,6 +257,13 @@ randomForestTrain <- function(x, y = NULL,
 
         if (resample){
           attr(tree, "resample.indices") <- sid
+          if (!is.null(ignore.y.indices)){
+            tree$y <- y.complete[sid,]
+          }
+        } else {
+          if (!is.null(ignore.y.indices)){
+            tree$y <- y.complete
+          }
         }
 
         p(message = sprintf("Tree %g/%g", idxt, ntree))
@@ -261,7 +283,7 @@ randomForestTrain <- function(x, y = NULL,
        || method == "binaryMargEntropyCond"
        || method == "multiBinaryGammaEntropy"
        || method == "MSEgammaDeviance"
-       || method == "MSEbinaryEntropyGammaDeviance"){
+       || method == "MSEbinaryEntropyGammaDeviance" || !is.null(dim(tree$y))){
     attr(rf, "multiresponse") = TRUE
   } else {
     attr(rf, "multiresponse") = FALSE
