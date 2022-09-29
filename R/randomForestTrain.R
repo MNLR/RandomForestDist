@@ -283,7 +283,7 @@ randomForestTrain <- function(x, y = NULL,
        || method == "binaryMargEntropyCond"
        || method == "multiBinaryGammaEntropy"
        || method == "MSEgammaDeviance"
-       || method == "MSEbinaryEntropyGammaDeviance" || !is.null(dim(tree$y))){
+       || method == "MSEbinaryEntropyGammaDeviance" || !is.null(dim(rf[[1]]$y))){
     attr(rf, "multiresponse") = TRUE
   } else {
     attr(rf, "multiresponse") = FALSE
