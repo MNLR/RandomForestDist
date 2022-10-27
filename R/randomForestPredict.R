@@ -58,11 +58,9 @@ randomForestPredict <- function(model,
     lapply.opt <- "future_lapply"
     if (missing(parallel.plan) || is.null(parallel.plan)){
       parallel.plan <- future::plan()
-    }
-    else if (is.character(parallel.plan) && parallel.plan == "auto") {
+    } else if (is.character(parallel.plan) && parallel.plan == "auto") {
       parallel.plan <- future::plan(future::multisession)
-    }
-    else {
+    } else {
       if (!is.list(parallel.plan) &&
           !is.function(parallel.plan) &&
           is.na(parallel.plan)) lapply.opt <- "lapply"
@@ -82,32 +80,35 @@ randomForestPredict <- function(model,
 
 
 
-  if (is.null(dim(newdata))){
-    newdata <- data.frame(x = as.vector(newdata))
-  } else{
-    if (!is.data.frame(newdata)) newdata <- data.frame(x = I(unname(newdata)))
-  }
-
-
-
     if (lapply.opt == "future_lapply"){
       intervals <- splitIntervals(length.indices = nrow(newdata),
-             chunks = if (missing(workers) || is.null(workers) || workers == 0) (availableCores()) else workers)
+              chunks = if (missing(workers) || is.null(workers) || workers == 0) (availableCores()) else workers
+              )
       tbr <-
-        future_lapply(future.seed = T,
-                      X = intervals,
-                      FUN = function(int){
-                        randomForestPredict(model, newdata = newdata[int, , drop = F],
-                                            method = method,
-                                            bagging.function = bagging.function,
-                                            distr = distr,
-                                            simplify.estimation = simplify.estimation,
-                                            non.informative.threshold = non.informative.threshold,
-                                            non.informative.p = non.informative.p,
-                                            marginal.imaginary.samplesize = marginal.imaginary.samplesize,
-                                            also.return.x = also.return.x,
-                                            parallel.plan = NA
-                                            )
+        future.apply::future_lapply(future.packages = "RandomForestDist",
+                                    future.seed = TRUE,
+                                    future.stdout = FALSE,
+                                    X = intervals,
+                                    FUN = function(int){
+                                      if (is.null(dim(newdata))){
+                                        nd <- newdata[int]
+                                      } else {
+                                        nd <- newdata[int, , drop = F]
+                                      }
+                                      return(
+                                      randomForestPredict(model,
+                                                          newdata = nd,
+                                                          method = method,
+                                                          bagging.function = bagging.function,
+                                                          distr = distr,
+                                                          simplify.estimation = simplify.estimation,
+                                                          non.informative.threshold = non.informative.threshold,
+                                                          non.informative.p = non.informative.p,
+                                                  marginal.imaginary.samplesize = marginal.imaginary.samplesize,
+                                                          also.return.x = also.return.x,
+                                                          parallel.plan = NA
+                                                          )
+                                      )
                       })
       if (!is.null(dim(tbr[[1]]))){
         return( do.call(rbind, tbr) )
@@ -116,55 +117,63 @@ randomForestPredict <- function(model,
       }
 
     } else {
-    split.function <- model[[1]]$method
 
-    if (split.function == "class") prediction.type = "prob"
-    else prediction.type <- "matrix"
+      if (is.null(dim(newdata))){
+        newdata <- data.frame(x = as.vector(newdata))
+      } else{
+        if (!is.data.frame(newdata)) newdata <- data.frame(x = I(unname(newdata)))
+      }
+
+
+      split.function <- model[[1]]$method
+
+      if (split.function == "class") prediction.type = "prob"
+      else prediction.type <- "matrix"
 
 
 
 
-    if (is.null(method)){
-      tbr <- simplify2array(lapply(model,
-                                   FUN = function(md) predict(md,
-                                                              newdata = newdata,
-                                                              type = prediction.type))
-      )
-      if (!is.function(bagging.function) && is.na(bagging.function)) {}
-      else {
-        tbr <- apply(X = tbr,
-                     MARGIN = seq(1, length(dim(tbr))-1),
-                     FUN = bagging.function, ... = ...)
+      if (is.null(method)){
+        tbr <- simplify2array(lapply(model,
+                                     FUN = function(md) predict(md,
+                                                                newdata = newdata,
+                                                                type = prediction.type))
+        )
+        if (!is.function(bagging.function) && is.na(bagging.function)) {}
+        else {
+          tbr <- apply(X = tbr,
+                       MARGIN = seq(1, length(dim(tbr))-1),
+                       FUN = bagging.function, ... = ...)
 
-        if (split.function == "binaryMultiEntropyCond" ||
-            split.function == "binaryMargEntropyCond"){
-          colnames(tbr) <- getBinaryMultiEntropyCondColnames(model[[1]]$parms)
+          if (split.function == "binaryMultiEntropyCond" ||
+              split.function == "binaryMargEntropyCond"){
+            colnames(tbr) <- getBinaryMultiEntropyCondColnames(model[[1]]$parms)
+          }
+        }
+      } else {
+        if (is.na(method) || method == "leaves") tbr <- predictLeaves(model, newdata, also.return.x)
+        else {
+          tbr <- aposterioriEstimation(model = model,
+                                       newdata = newdata,
+                                       method = method,
+                                       split.function = split.function,
+                                       distr = distr,
+                                       simplify.estimation = simplify.estimation,
+                                    non.informative.threshold = non.informative.threshold,
+                                    non.informative.p = non.informative.p,
+                          marginal.imaginary.samplesize = marginal.imaginary.samplesize)
         }
       }
-    } else {
-      if (is.na(method) || method == "leaves") tbr <- predictLeaves(model, newdata, also.return.x)
-      else {
-        tbr <- aposterioriEstimation(model = model,
-                                     newdata = newdata,
-                                     method = method,
-                                     split.function = split.function,
-                                     distr = distr,
-                                     simplify.estimation = simplify.estimation,
-                                  non.informative.threshold = non.informative.threshold,
-                                  non.informative.p = non.informative.p,
-                        marginal.imaginary.samplesize = marginal.imaginary.samplesize)
+
+      attr(tbr, "split.function") <- split.function
+
+      class(tbr) <- "RandomForestDist.prediction"
+      if ( isSimulable(method, split.function) ){
+        class(tbr) <- "RandomForestDist.prediction.simulable"
       }
     }
 
-    attr(tbr, "split.function") <- split.function
-
-    class(tbr) <- "RandomForestDist.prediction"
-    if ( isSimulable(method, split.function) ){
-      class(tbr) <- "RandomForestDist.prediction.simulable"
-    }
-  }
-
-  return(tbr)
+    return(tbr)
 }
 
 
