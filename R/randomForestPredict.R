@@ -91,7 +91,8 @@ randomForestPredict <- function(model,
 
 
     if (lapply.opt == "future_lapply"){
-      intervals <- splitIntervals(length.indices = nrow(newdata), chunks = workers)
+      intervals <- splitIntervals(length.indices = nrow(newdata),
+             chunks = if (missing(workers) || is.null(workers) || workers == 0) (availableCores()) else workers)
       tbr <-
         future_lapply(future.seed = T,
                       X = intervals,
