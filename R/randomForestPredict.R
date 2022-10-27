@@ -51,7 +51,6 @@ randomForestPredict <- function(model,
                                 workers,
                                 ...){
 
-
   if (requireNamespace("future", quietly = TRUE) &&
       requireNamespace("future.apply", quietly = TRUE)
   ) {
@@ -78,12 +77,12 @@ randomForestPredict <- function(model,
   }
 
 
-
-
     if (lapply.opt == "future_lapply"){
+      chunks <- if (missing(workers) || is.null(workers) || workers == 0) (availableCores()) else workers
+
       intervals <- splitIntervals(length.indices = nrow(newdata),
-              chunks = if (missing(workers) || is.null(workers) || workers == 0) (availableCores()) else workers
-              )
+                                  chunks = chunks
+                                  )
       tbr <-
         future.apply::future_lapply(future.packages = "RandomForestDist",
                                     future.seed = TRUE,
@@ -110,12 +109,23 @@ randomForestPredict <- function(model,
                                                           )
                                       )
                       })
+
+
+
+      a1 <- attr(tbr[[1]], "split.function")
+      cc <- class(tbr[[1]])
+
+
       if (!is.null(dim(tbr[[1]]))){
-        return( do.call(rbind, tbr) )
+        tbr <- do.call(rbind, tbr)
       } else {
-        return( do.call(c, tbr) )
+        tbr <- do.call(c, tbr)
       }
 
+      attr(tbr, "split.function") <- a1
+      class(tbr) <- cc
+
+      return(tbr)
     } else {
 
       if (is.null(dim(newdata))){
@@ -192,6 +202,14 @@ splitIntervals <- function(length.indices, chunks = 1){
           )
         }),
         list( (cut_size*(chunks-1) + 1):(length.indices) )
+      )
+  } else if (chunks == 2){
+    cut_size <- floor(length.indices/chunks)
+
+    intervals <-
+      list(
+         1:cut_size,
+         (cut_size + 1):(length.indices)
       )
   } else {
     intervals <- list(1:length.indices)

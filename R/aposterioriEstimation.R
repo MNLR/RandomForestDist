@@ -65,9 +65,9 @@ aposterioriEstimation <- function(model, newdata, method, split.function, distr 
 
       tbr <-
         do.call(rbind,
-                lapply(aux, FUN = function(ll) fitdist(data = ll[,1],
-                                                       distr = "norm",
-                                                       method = method[1])$estimate)
+                lapply(aux, FUN = function(ll) fitdistrplus::fitdist(data = ll[,1],
+                                                                     distr = "norm",
+                                                                     method = method[1])$estimate)
         )
 
       if (method[2] == "mme" || method[2] == "bc3"){ ## mme is currently deactivated
@@ -106,7 +106,7 @@ aposterioriEstimation <- function(model, newdata, method, split.function, distr 
       if (method != "bc3"){
         tbr <-
           lapply(prl, function(ls){
-            fitdist( data = ls, distr = distr, method = method )
+            fitdistrplus::fitdist( data = ls, distr = distr, method = method )
           })
       } else {
         if (distr != "gamma") stop("bc3 estimators are for the gamma distribution")
