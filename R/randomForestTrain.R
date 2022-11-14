@@ -63,8 +63,8 @@ randomForestTrain <- function(x, y = NULL,
                               undersample.binary = FALSE,
                               oob.prunning = FALSE,
                               oob.prunning.function = NULL,
-                              parallel.plan,
-                              workers,
+                              parallel.plan = NULL,
+                              workers = NULL,
                               weights = NULL,
                               parms = NULL,
                               remove.leaf.info = FALSE,
@@ -73,34 +73,31 @@ randomForestTrain <- function(x, y = NULL,
                               ignore.y.indices = NULL,
                               progress.bar = TRUE){
 
-
-
-  if (requireNamespace("future", quietly = TRUE) &&
-      requireNamespace("future.apply", quietly = TRUE)
-      ) {
-    lapply.opt <- "future_lapply"
-    if (missing(parallel.plan) || is.null(parallel.plan)){
-      parallel.plan <- future::plan()
-    }
-    else if (is.character(parallel.plan) && parallel.plan == "auto") {
-      parallel.plan <- future::plan(future::multisession)
-    }
-    else {
-      if (!is.list(parallel.plan) &&
-          !is.function(parallel.plan) &&
-          is.na(parallel.plan)) lapply.opt <- "lapply"
-      else{
-        o.plan <- future::plan()
-        if (missing(workers)) future::plan(parallel.plan)
-        else future::plan(parallel.plan,
-        workers = if (is.null(workers) || workers == 0) (availableCores()) else workers
-                          )
-        on.exit(future::plan(o.plan), add = TRUE)
-      }
-    }
-  } else { # package future or future.apply not available
+  if (
+    ( !is.null(parallel.plan) && !is.function(parallel.plan) && is.na(parallel.plan) ) ||   ## No parallel selected or packages not available
+      !requireNamespace("future", quietly = TRUE) ||
+      !requireNamespace("future.apply", quietly = TRUE)){
     lapply.opt <- "lapply"
+  } else {
+    lapply.opt <- "future_lapply"
+    if (is.null(parallel.plan)){
+      # and do nothing, use plan set outside
+    } else {
+      o.plan <- future::plan()
+      if (is.null(workers)) workers <- parallel::detectCores()
+
+      if (is.character(parallel.plan) && parallel.plan == "auto"){
+        future::plan(future::multisession, workers = workers) # the default is multisession, since it works interactively
+      } else { # plan set as option parallel.plan
+        future::plan(parallel.plan, workers = workers)
+      }
+      on.exit(future::plan(o.plan), add = TRUE)
+    }
   }
+
+
+
+
 
   if (!is.null(ignore.y.indices)){
     y.complete <- y
