@@ -75,6 +75,7 @@ randomForestTrain <- function(x, y = NULL,
 
   if (
     ( !is.null(parallel.plan) && !is.function(parallel.plan) && is.na(parallel.plan) ) ||   ## No parallel selected or packages not available
+      !requireNamespace("parallelly", quietly = TRUE) ||
       !requireNamespace("future", quietly = TRUE) ||
       !requireNamespace("future.apply", quietly = TRUE)){
     lapply.opt <- "lapply"
