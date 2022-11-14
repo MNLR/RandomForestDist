@@ -48,37 +48,36 @@ randomForestPredict <- function(model,
                                 marginal.imaginary.samplesize = 1,
                                 also.return.x = FALSE,
                                 parallel.plan = NA,
-                                workers,
+                                workers = NULL,
                                 ...){
 
-  if (requireNamespace("future", quietly = TRUE) &&
-      requireNamespace("future.apply", quietly = TRUE)
-  ) {
-    lapply.opt <- "future_lapply"
-    if (missing(parallel.plan) || is.null(parallel.plan)){
-      parallel.plan <- future::plan()
-    } else if (is.character(parallel.plan) && parallel.plan == "auto") {
-      parallel.plan <- future::plan(future::multisession)
-    } else {
-      if (!is.list(parallel.plan) &&
-          !is.function(parallel.plan) &&
-          is.na(parallel.plan)) lapply.opt <- "lapply"
-      else{
-        o.plan <- future::plan()
-        if (missing(workers)) future::plan(parallel.plan)
-        else future::plan(parallel.plan,
-                          workers = if (is.null(workers) || workers == 0) (availableCores()) else workers
-        )
-        on.exit(future::plan(o.plan), add = TRUE)
-      }
-    }
-  } else { # package future or future.apply not available
+  if (
+    ( !is.null(parallel.plan) && !is.function(parallel.plan) && is.na(parallel.plan) ) ||   ## No parallel selected or packages not available
+    !requireNamespace("parallelly", quietly = TRUE) ||
+    !requireNamespace("future", quietly = TRUE) ||
+    !requireNamespace("future.apply", quietly = TRUE)){
     lapply.opt <- "lapply"
+  } else {
+    lapply.opt <- "future_lapply"
+    if (is.null(parallel.plan)){
+      workers <- future::nbrOfFreeWorkers()
+      # and do nothing, use plan set outside
+    } else {
+      o.plan <- future::plan()
+      if (is.null(workers)) workers <- parallel::detectCores()
+
+      if (is.character(parallel.plan) && parallel.plan == "auto"){
+        future::plan(future::multisession, workers = workers) # the default is multisession, since it works interactively
+      } else { # plan set as option parallel.plan
+        future::plan(parallel.plan, workers = workers)
+      }
+      on.exit(future::plan(o.plan), add = TRUE)
+    }
   }
 
 
     if (lapply.opt == "future_lapply"){
-      chunks <- if (missing(workers) || is.null(workers) || workers == 0) (availableCores()) else workers
+      chunks <- workers
 
       intervals <- splitIntervals(length.indices = nrow(newdata),
                                   chunks = chunks
