@@ -60,7 +60,7 @@ randomForestPredict <- function(model,
   } else {
     lapply.opt <- "future_lapply"
     if (is.null(parallel.plan)){
-      workers <- if (is.null(workers)){ future::nbrOfFreeWorkers() }
+      if (is.null(workers)){ workers <- future::nbrOfFreeWorkers() }
       # and do nothing, use plan set outside
     } else {
       o.plan <- future::plan()
@@ -77,10 +77,9 @@ randomForestPredict <- function(model,
 
 
     if (lapply.opt == "future_lapply"){
-      chunks <- workers
 
       intervals <- splitIntervals(length.indices = nrow(newdata),
-                                  chunks = chunks
+                                  chunks = workers
                                   )
       tbr <-
         future.apply::future_lapply(future.packages = "RandomForestDist",
