@@ -64,7 +64,7 @@ randomForestPredict <- function(model,
       # and do nothing, use plan set outside
     } else {
       o.plan <- future::plan()
-      if (is.null(workers)){ workers <- parallel::detectCores() }
+      if (is.null(workers)){ workers <- parallelly::availableCores() }
 
       if (is.character(parallel.plan) && parallel.plan == "auto"){
         future::plan(future::multisession, workers = workers) # the default is multisession, since it works interactively

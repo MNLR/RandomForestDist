@@ -13,7 +13,7 @@ randomForestTrain(
   minsplit = if (!is.null(y) && !is.factor(y)) 5 else 1,
   minbucket = minsplit/3,
   maxdepth = 30,
-  method = NULL,
+  method = "anova",
   resample = TRUE,
   replace = TRUE,
   sampsize = NULL,
@@ -21,13 +21,14 @@ randomForestTrain(
   undersample.binary = FALSE,
   oob.prunning = FALSE,
   oob.prunning.function = NULL,
-  parallel.plan,
-  workers,
+  parallel.plan = NULL,
+  workers = NULL,
   weights = NULL,
   parms = NULL,
   remove.leaf.info = FALSE,
   keep.x = FALSE,
   keep.y = TRUE,
+  ignore.y.indices = NULL,
   progress.bar = TRUE
 )
 }
@@ -84,9 +85,13 @@ In any other case this parameter corresponds to
 \item{parms}{\code{parms} as pased to \code{rpart::rpart()}.}
 
 \item{keep.x}{Keeps a copy of the training set x for each tree. Default to FALSE, reduces
-the memory usage.
-#' @param keep.x Keeps a copy of the training set y for each tree. Default to TRUE.
+the memory usage.}
+
+\item{keep.y}{Keeps a copy of the training set y for each tree. Default to TRUE.
 NOTE: Setting this to \code{FALSE} disables a posteriori estimation.}
+
+\item{ignore.y.indices}{A vector, used to ignore certain columns during the training
+stage. Usefull to use it a posteriori. Default to NULL: nothing will be ignored.}
 }
 \description{
 Train a random forest for predictors \code{x} and predictands \code{y}.

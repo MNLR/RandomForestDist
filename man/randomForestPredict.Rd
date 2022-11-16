@@ -14,6 +14,9 @@ randomForestPredict(
   non.informative.threshold = 0,
   non.informative.p = 0.5,
   marginal.imaginary.samplesize = 1,
+  also.return.x = FALSE,
+  parallel.plan = NA,
+  workers = NULL,
   ...
 )
 }
