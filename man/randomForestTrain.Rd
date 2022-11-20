@@ -29,7 +29,10 @@ randomForestTrain(
   keep.x = FALSE,
   keep.y = TRUE,
   ignore.y.indices = NULL,
-  progress.bar = TRUE
+  progress.bar = TRUE,
+  checkpoints.every = NULL,
+  checkpoints.label = "grove",
+  delete.checkpoints.afterMerging = TRUE
 )
 }
 \arguments{

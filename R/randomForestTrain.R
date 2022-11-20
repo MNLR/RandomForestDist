@@ -71,225 +71,314 @@ randomForestTrain <- function(x, y = NULL,
                               keep.x = FALSE,
                               keep.y = TRUE,
                               ignore.y.indices = NULL,
-                              progress.bar = TRUE){
+                              progress.bar = TRUE,
+                              checkpoints.every = NULL,
+                              checkpoints.label = "grove",
+                              delete.checkpoints.afterMerging = TRUE){
 
-  if (
-    ( !is.null(parallel.plan) && !is.function(parallel.plan) && is.na(parallel.plan) ) ||   ## No parallel selected or packages not available
-      !requireNamespace("parallelly", quietly = TRUE) ||
-      !requireNamespace("future", quietly = TRUE) ||
-      !requireNamespace("future.apply", quietly = TRUE)){
-    lapply.opt <- "lapply"
-  } else {
-    lapply.opt <- "future_lapply"
-    if (is.null(parallel.plan)){
-      # and do nothing, use plan set outside
+  if (is.null(checkpoints.every)){
+
+    if (
+        (!is.null(parallel.plan) && !is.function(parallel.plan) && is.na(parallel.plan)) ||   ## No parallel selected or packages not available
+        !requireNamespace("parallelly", quietly = TRUE) ||
+        !requireNamespace("future", quietly = TRUE) ||
+        !requireNamespace("future.apply", quietly = TRUE)
+      ){
+      lapply.opt <- "lapply"
     } else {
-      o.plan <- future::plan()
-      if (is.null(workers)) workers <- parallelly::availableCores()
+      lapply.opt <- "future_lapply"
+      if (is.null(parallel.plan)){
+        # and do nothing, use plan set outside
+      } else {
+        o.plan <- future::plan()
+        if (is.null(workers)) workers <- parallelly::availableCores()
 
-      if (is.character(parallel.plan) && parallel.plan == "auto"){
-        future::plan(future::multisession, workers = workers) # the default is multisession, since it works interactively
-      } else { # plan set as option parallel.plan
-        future::plan(parallel.plan, workers = workers)
+        if (is.character(parallel.plan) && parallel.plan == "auto"){
+          future::plan(future::multisession, workers = workers) # the default is multisession, since it works interactively
+        } else { # plan set as option parallel.plan
+          future::plan(parallel.plan, workers = workers)
+        }
+        on.exit(future::plan(o.plan), add = TRUE)
       }
-      on.exit(future::plan(o.plan), add = TRUE)
     }
-  }
 
 
-
-
-
-  if (!is.null(ignore.y.indices)){
-    y.complete <- y
-    y <- y[,-ignore.y.indices, drop = FALSE]
-  }
-
-  stopifnot(sum(is.na(y)) == 0)
-  stopifnot(sum(is.na(x)) == 0)
-
-  # mandatory, otherwise passed to rpart:
-  cp <- -Inf  # RFs do not regularize - Ensures negative nll values don't conflict
-  xval <- 0
-
-  if (is.null(dim(x))) x <- matrix(x, nrow = length(x))
-
-  if (is.null(sampsize)){
-    if (!undersample.binary){
-      if (replace) sampsize <- nrow(x) else sampsize <- ceiling(.632*nrow(x))
+    if (!is.null(ignore.y.indices)){
+      y.complete <- y
+      y <- y[,-ignore.y.indices, drop = FALSE]
     }
-  }
 
-  nrx <- nrow(x)
+    stopifnot(sum(is.na(y)) == 0)
+    stopifnot(sum(is.na(x)) == 0)
 
-  idxS <- 1:ntree
-  with_progress(enable = progress.bar, expr = {
-    p <- progressor(along = idxS)
-    if (lapply.opt == "future_lapply") {
-      rf <- future.apply::future_lapply(future.packages = "rpart",
-                                        future.seed = TRUE,
-                                        future.stdout = FALSE,
-                                        X = idxS, FUN = function(idxt){
+    # mandatory, otherwise passed to rpart:
+    cp <- -Inf  # RFs do not regularize - Ensures negative nll values don't conflict
+    xval <- 0
 
-                            if (resample) {
-                              sid <- sample(1:nrx, size = sampsize, replace = replace)
+    if (is.null(dim(x))) x <- matrix(x, nrow = length(x))
 
-                              if (oob.prunning){
-                                idxoob <- setdiff(1:nrx, sid)
+    if (is.null(sampsize)){
+      if (!undersample.binary){
+        if (replace) sampsize <- nrow(x) else sampsize <- ceiling(.632*nrow(x))
+      }
+    }
 
-                                if (!is.null(dim(x))) xoob <- x[idxoob, , drop = FALSE ] else xoob <- x[idxoob, drop = FALSE]
-                                if (!is.null(dim(y))) yoob <- y[idxoob, , drop = FALSE] else yoob <- y[idxoob, drop = FALSE]
+    nrx <- nrow(x)
+
+    idxS <- 1:ntree
+    with_progress(enable = progress.bar, expr = {
+      p <- progressor(along = idxS)
+      if (lapply.opt == "future_lapply") {
+        rf <- future.apply::future_lapply(future.packages = "rpart",
+                                          future.seed = TRUE,
+                                          future.stdout = FALSE,
+                                          X = idxS, FUN = function(idxt){
+
+                              if (resample) {
+                                sid <- sample(1:nrx, size = sampsize, replace = replace)
+
+                                if (oob.prunning){
+                                  idxoob <- setdiff(1:nrx, sid)
+
+                                  if (!is.null(dim(x))) xoob <- x[idxoob, , drop = FALSE ] else xoob <- x[idxoob, drop = FALSE]
+                                  if (!is.null(dim(y))) yoob <- y[idxoob, , drop = FALSE] else yoob <- y[idxoob, drop = FALSE]
+                                }
+
+                                if (!is.null(dim(x))) x <- x[sid, , drop = FALSE] else x <- x[sid , drop = FALSE]
+                                if (!is.null(dim(y))) y <- y[sid, , drop = FALSE] else y <- y[sid , drop = FALSE]
+                              } else if (oversample.binary){
+                                os <- oversample(y = y, x = x, printm = FALSE)
+
+                                y <- os$y
+                                x <- os$x
+                                os <- NULL
+                              } else if (undersample.binary){
+                                us <- undersampleBinary(y = y, x = x,
+                                                        size = sampsize,
+                                                        replace = replace,
+                                                         print.info = T)
+
+                                y <- us$IS$y
+                                x <- us$IS$x
+                                us <- NULL
                               }
 
-                              if (!is.null(dim(x))) x <- x[sid, , drop = FALSE] else x <- x[sid , drop = FALSE]
-                              if (!is.null(dim(y))) y <- y[sid, , drop = FALSE] else y <- y[sid , drop = FALSE]
-                            } else if (oversample.binary){
-                              os <- oversample(y = y, x = x, printm = FALSE)
+                              tree <-
+                                rpart( formula = y ~ x,
+                                       data = data.frame(y = I(y), x = I(x)),
+                                       mtry = mtry,
+                                       minsplit = minsplit,
+                                       minbucket = minbucket,
+                                       cp = cp,
+                                       maxdepth = maxdepth,
+                                       xval = 0,
+                                       method = method,
+                                       weights = weights,
+                                       parms = parms,
+                                       control = NULL,
+                                       x = keep.x,
+                                       y = keep.y
+                                       )
 
-                              y <- os$y
-                              x <- os$x
-                              os <- NULL
-                            } else if (undersample.binary){
-                              us <- undersampleBinary(y = y, x = x,
-                                                      size = sampsize,
-                                                      replace = replace,
-                                                       print.info = T)
-
-                              y <- us$IS$y
-                              x <- us$IS$x
-                              us <- NULL
-                            }
-
-                            tree <-
-                              rpart( formula = y ~ x,
-                                     data = data.frame(y = I(y), x = I(x)),
-                                     mtry = mtry,
-                                     minsplit = minsplit,
-                                     minbucket = minbucket,
-                                     cp = cp,
-                                     maxdepth = maxdepth,
-                                     xval = 0,
-                                     method = method,
-                                     weights = weights,
-                                     parms = parms,
-                                     control = NULL,
-                                     x = keep.x,
-                                     y = keep.y
-                                     )
-
-                            if (resample && oob.prunning){
-                              tree <- pruneFromSample(tr = tree, x = xoob, y = yoob,
-                                        oob.prunning.function = oob.prunning.function,
-                                                      plot.tree.sequence = FALSE)
-                            }
-
-                            if (resample){
-                              attr(tree, "resample.indices") <- sid
-                              if (!is.null(ignore.y.indices)){
-                                tree$y <- y.complete[sid,]
+                              if (resample && oob.prunning){
+                                tree <- pruneFromSample(tr = tree, x = xoob, y = yoob,
+                                          oob.prunning.function = oob.prunning.function,
+                                                        plot.tree.sequence = FALSE)
                               }
-                            } else {
-                              if (!is.null(ignore.y.indices)){
-                                tree$y <- y.complete
+
+                              if (resample){
+                                attr(tree, "resample.indices") <- sid
+                                if (!is.null(ignore.y.indices)){
+                                  tree$y <- y.complete[sid,]
+                                }
+                              } else {
+                                if (!is.null(ignore.y.indices)){
+                                  tree$y <- y.complete
+                                }
                               }
-                            }
 
-                            p(message = sprintf("Tree %g/%g", idxt, ntree))
-                            gc()
-                            return(tree)
-                          })
-    } else if (lapply.opt == "lapply"){
-      rf <- lapply(X = idxS, FUN = function(idxt){
+                              p(message = sprintf("Tree %g/%g", idxt, ntree))
+                              gc()
+                              return(tree)
+                            })
+      } else if (lapply.opt == "lapply"){
+        rf <- lapply(X = idxS, FUN = function(idxt){
 
-        if (resample) {
-          sid <- sample(1:nrx, size = sampsize, replace = replace)
+          if (resample) {
+            sid <- sample(1:nrx, size = sampsize, replace = replace)
+
+            if (oob.prunning){
+              idxoob <- setdiff(1:nrx, sid)
+
+              if (!is.null(dim(x))) xoob <- x[idxoob, , drop = FALSE ] else xoob <- x[idxoob, drop = FALSE ]
+              if (!is.null(dim(y))) yoob <- y[idxoob, , drop = FALSE ] else yoob <- y[idxoob, drop = FALSE ]
+            }
+
+            if (!is.null(dim(x))) x <- x[sid, , drop = FALSE ] else x <- x[sid, drop = FALSE ]
+            if (!is.null(dim(y))) y <- y[sid, , drop = FALSE ] else y <- y[sid, drop = FALSE ]
+          } else if (oversample.binary){
+            os <- oversample(y = y, x = x, printm = FALSE)
+
+            y <- os$y
+            x <- os$x
+            os <- NULL
+          } else if (undersample.binary){
+            us <- undersampleBinary(y = y, x = x,
+                                           size = sampsize,
+                                           replace = replace,
+                                           print.info = T)
+
+            y <- us$IS$y
+            x <- us$IS$x
+            us <- NULL
+          }
+
+          tree <-
+            rpart( formula = y ~ x,
+                   data = data.frame(y = I(y), x = I(x)),
+                   mtry = mtry,
+                   minsplit = minsplit,
+                   minbucket = minbucket,
+                   cp = cp,
+                   maxdepth = maxdepth,
+                   xval = 0,
+                   method = method,
+                   weights = weights,
+                   parms = parms,
+                   control = NULL,
+                   x = keep.x,
+                   y = keep.y
+            )
 
           if (oob.prunning){
-            idxoob <- setdiff(1:nrx, sid)
-
-            if (!is.null(dim(x))) xoob <- x[idxoob, , drop = FALSE ] else xoob <- x[idxoob, drop = FALSE ]
-            if (!is.null(dim(y))) yoob <- y[idxoob, , drop = FALSE ] else yoob <- y[idxoob, drop = FALSE ]
+            tree <- pruneFromSample(tr = tree, x = xoob, y = yoob,
+                                    oob.prunning.function = oob.prunning.function,
+                                    plot.tree.sequence = FALSE)
           }
 
-          if (!is.null(dim(x))) x <- x[sid, , drop = FALSE ] else x <- x[sid, drop = FALSE ]
-          if (!is.null(dim(y))) y <- y[sid, , drop = FALSE ] else y <- y[sid, drop = FALSE ]
-        } else if (oversample.binary){
-          os <- oversample(y = y, x = x, printm = FALSE)
-
-          y <- os$y
-          x <- os$x
-          os <- NULL
-        } else if (undersample.binary){
-          us <- undersampleBinary(y = y, x = x,
-                                         size = sampsize,
-                                         replace = replace,
-                                         print.info = T)
-
-          y <- us$IS$y
-          x <- us$IS$x
-          us <- NULL
-        }
-
-        tree <-
-          rpart( formula = y ~ x,
-                 data = data.frame(y = I(y), x = I(x)),
-                 mtry = mtry,
-                 minsplit = minsplit,
-                 minbucket = minbucket,
-                 cp = cp,
-                 maxdepth = maxdepth,
-                 xval = 0,
-                 method = method,
-                 weights = weights,
-                 parms = parms,
-                 control = NULL,
-                 x = keep.x,
-                 y = keep.y
-          )
-
-        if (oob.prunning){
-          tree <- pruneFromSample(tr = tree, x = xoob, y = yoob,
-                                  oob.prunning.function = oob.prunning.function,
-                                  plot.tree.sequence = FALSE)
-        }
-
-        if (resample){
-          attr(tree, "resample.indices") <- sid
-          if (!is.null(ignore.y.indices)){
-            tree$y <- y.complete[sid,]
+          if (resample){
+            attr(tree, "resample.indices") <- sid
+            if (!is.null(ignore.y.indices)){
+              tree$y <- y.complete[sid,]
+            }
+          } else {
+            if (!is.null(ignore.y.indices)){
+              tree$y <- y.complete
+            }
           }
-        } else {
-          if (!is.null(ignore.y.indices)){
-            tree$y <- y.complete
-          }
-        }
 
-        p(message = sprintf("Tree %g/%g", idxt, ntree))
+          p(message = sprintf("Tree %g/%g", idxt, ntree))
 
 
 
-        return(tree)
-      })
-    } else {stop("Internal Error: lapply.opt not set")}
+          return(tree)
+        })
+      } else {stop("Internal Error: lapply.opt not set")}
 
-  })
-
-  if (    method =="binaryCrossEntropyMultivar"
-       || method == "binaryCrossEntropyMultivarCorPenalization"
-       || method == "binaryMultiEntropy"
-       || method == "binaryMultiEntropyCond"
-       || method == "binaryMargEntropyCond"
-       || method == "multiBinaryGammaEntropy"
-       || method == "MSEgammaDeviance"
-       || method == "MSEbinaryEntropyGammaDeviance" || !is.null(dim(rf[[1]]$y))){
-    attr(rf, "multiresponse") = TRUE
+    })
   } else {
-    attr(rf, "multiresponse") = FALSE
+
+    if (!dir.exists(".tempRandomForestDistFiles")){
+      delete.tempDir <- T
+      dir.create(".tempRandomForestDistFiles")
+    } else {
+      delete.tempDir <- FALSE
+    }
+
+
+    last.grove <- ntree %% checkpoints.every
+
+    ngroves <- (ntree %/% checkpoints.every)
+    if (last.grove != 0) ngroves <- ngroves + 1
+    else last.grove <- checkpoints.every
+
+
+    fileS <- c()
+    for ( igrove in 1:ngroves ){
+      if (progress.bar){
+        print(paste0("Building grove ", igrove , "/", ngroves, "..."))
+      }
+      if (igrove == ngroves) checkpoints.every <- last.grove
+
+      rfdist.grove <-
+        randomForestTrain(x = x, y = y,
+                          ntree = checkpoints.every,
+                          mtry = mtry,
+                          minsplit = minsplit,
+                          minbucket = minbucket,
+                          maxdepth = maxdepth,
+                          method = method,
+                          resample = resample,
+                          replace = replace,
+                          sampsize = sampsize,
+                          oversample.binary = oversample.binary,
+                          undersample.binary = undersample.binary,
+                          oob.prunning = oob.prunning,
+                          oob.prunning.function = oob.prunning.function,
+                          parallel.plan = parallel.plan,
+                          workers = workers,
+                          weights = weights,
+                          parms = parms,
+                          remove.leaf.info = remove.leaf.info,
+                          keep.x = keep.x,
+                          keep.y = keep.y,
+                          ignore.y.indices = ignore.y.indices,
+                          progress.bar = progress.bar
+                          , checkpoints.every = NULL,
+                          checkpoints.label = NULL,
+                          delete.checkpoints.afterMerging = FALSE)
+
+      file.name <- paste0(".tempRandomForestDistFiles", "/",
+                          checkpoints.label, as.character(as.numeric(Sys.time())), ".rda")
+
+      save(rfdist.grove,
+           file = file.name)
+
+
+      fileS <- c(fileS, file.name)
+
+      rm(rfdist.grove)
+      gc(full = TRUE)
+
+    }
+
+
+    if (progress.bar){ print("Merging groves...") }
+    rf <-
+      lapply(fileS, function(file){
+        load(file)
+        return(rfdist.grove)
+      })
+
+    rf <- do.call(c, rf)
+
+    if (delete.checkpoints.afterMerging){
+      if (progress.bar){ print("Deleting groves...") }
+        lapply(fileS, function(file){
+          file.remove(file)
+        })
+        file.remove(".tempRandomForestDistFiles")
+    }
+
+    if (progress.bar){ print("Done") }
+
+
   }
 
+    if (    method =="binaryCrossEntropyMultivar"
+         || method == "binaryCrossEntropyMultivarCorPenalization"
+         || method == "binaryMultiEntropy"
+         || method == "binaryMultiEntropyCond"
+         || method == "binaryMargEntropyCond"
+         || method == "multiBinaryGammaEntropy"
+         || method == "MSEgammaDeviance"
+         || method == "MSEbinaryEntropyGammaDeviance" || !is.null(dim(rf[[1]]$y))){
+      attr(rf, "multiresponse") = TRUE
+    } else {
+      attr(rf, "multiresponse") = FALSE
+    }
 
-
-  class(rf) <- "RandomForestDist"
+    class(rf) <- "RandomForestDist"
 
   return(rf)
 }
